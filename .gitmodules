@@ -1,0 +1,6 @@
+[submodule "libs/LibDeflate"]
+	path = libs/LibDeflate
+	url = https://github.com/SafeteeWoW/LibDeflate.git
+[submodule "libs/LibSerialize"]
+	path = libs/LibSerialize
+	url = https://github.com/rossnichols/LibSerialize.git

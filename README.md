@@ -1,2 +1,4 @@
-# raid-tables
-A WoW addon to track assigned loot in RAID content.
+# Raid Tables
+This project is a addon for the [World of Warcraft](www.worldofwarcraft.com) game. This tool allows you to create multiple raid setups and handle loot assignment based on the three item categories - rare items, tier items, and general items. It's used in my own raid to handle loot more fairly for everyone. 
+The intend of this addon is to make it as easy as possible to provide a more fairly way of loot assignment. Instead of using the normal roll system (or previously personal loot) that assigns loot on pure luck - thus some players can get more, others fewer items - or using a loot council to freely assign items without specific tracking, this addon allows the raid lead to track items in the three categories. This way by simply ordering the players for a given category you can use the normal roll system but prevent the imbalance created by pure roll luck.
+
