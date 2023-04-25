@@ -2423,12 +2423,11 @@ widgets.Dialogs.Roll.Items = {}
 widgets.Dialogs.Roll.MainSpecRolls = {}
 widgets.Dialogs.Roll.SecondSpecRolls = {}
 widgets.Dialogs.Roll.TransmogRolls = {}
+widgets.Dialogs.Roll.InvalidRolls = {}
 widgets.Dialogs.Roll.FreeRolls = {}
 widgets.Dialogs.Roll.AssignmentList = {}
-widgets.Dialogs.Roll.PlayerFrames = {}
-widgets.Dialogs.Roll.FreePlayerFrames = {}
 widgets.Dialogs.Roll.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Roll.Frame:SetSize(40 + 64 + 20 + 125 + 20 + 125 + 40, 700)
+widgets.Dialogs.Roll.Frame:SetSize(40 + 64 + 20 + 125 + 20 + 125 + 40, 820)
 widgets.Dialogs.Roll.Frame:SetPoint("TOPLEFT", widgets.Addon, "TOPRIGHT", 10, 0)
 widgets.Dialogs.Roll.Frame:SetBackdrop({
     bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -2469,8 +2468,10 @@ widgets.Dialogs.Roll.AssignmentText:SetPoint("CENTER")
 -- Create Roll Dialog MainSpec Loot Scroll View
 -----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.ScrollMainSpecRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("TOPLEFT", 10, -210)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Roll.Frame, "TOPRIGHT", -33, -335)
+widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("TOPLEFT", 10, -215)
+widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("TOPRIGHT", -32, -215)
+widgets.Dialogs.Roll.ScrollMainSpecRoll:SetHeight(125)
+widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Roll.Frame, "TOPRIGHT", -38, -335)
 widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdrop({
     bgFile = "Interface\\Buttons\\WHITE8x8",
     edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -2488,15 +2489,16 @@ widgets.Dialogs.Roll.ScrollMainSpecRoll:SetScrollChild(widgets.Dialogs.Roll.Scro
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Roll Dialog MainSpec Roll Label
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.MainSpecRollLabel = CreateLabel("Main Need:", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Roll.MainSpecRollLabel = CreateLabel("Main Spec Need (100):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
 widgets.Dialogs.Roll.MainSpecRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPLEFT", 5, 5)
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Roll Dialog SecondSpec Loot Scroll View
 -----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.ScrollSecondSpecRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMLEFT", 0, -10)
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPRIGHT", 0, -150)
+widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMLEFT", 0, -30)
+widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMRIGHT", 0, -30)
+widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetHeight(125)
 widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdrop({
     bgFile = "Interface\\Buttons\\WHITE8x8",
     edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -2510,6 +2512,66 @@ widgets.Dialogs.Roll.ScrollSecondSpecRollView:SetWidth(widgets.Dialogs.Roll.Scro
 widgets.Dialogs.Roll.ScrollSecondSpecRollView:SetHeight(1)
 
 widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollSecondSpecRollView)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog MainSpec Roll Label
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.SecondSpecRollLabel = CreateLabel("Second Spec Rolls (50):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Roll.SecondSpecRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "TOPLEFT", 5, 5)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog Transmog Loot Scroll View
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.ScrollTransmogRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMLEFT", 0, -30)
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMRIGHT", 0, -30)
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetHeight(125)
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8x8",
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+})
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropColor(0, 0, 0, 1)
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+widgets.Dialogs.Roll.ScrollTransmogRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollTransmogRoll)
+widgets.Dialogs.Roll.ScrollTransmogRollView:SetWidth(widgets.Dialogs.Roll.ScrollTransmogRoll:GetWidth())
+widgets.Dialogs.Roll.ScrollTransmogRollView:SetHeight(1)
+
+widgets.Dialogs.Roll.ScrollTransmogRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollTransmogRollView)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog MainSpec Roll Label
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.TransmogRollLabel = CreateLabel("Transmog Rolls (25):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Roll.TransmogRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollTransmogRoll, "TOPLEFT", 5, 5)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog Invalid Loot Scroll View
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.ScrollInvalidRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMLEFT", 0, -30)
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMRIGHT", 0, -30)
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetHeight(125)
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8x8",
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+})
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropColor(0, 0, 0, 1)
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+widgets.Dialogs.Roll.ScrollInvalidRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollInvalidRoll)
+widgets.Dialogs.Roll.ScrollInvalidRollView:SetWidth(widgets.Dialogs.Roll.ScrollInvalidRoll:GetWidth())
+widgets.Dialogs.Roll.ScrollInvalidRollView:SetHeight(1)
+
+widgets.Dialogs.Roll.ScrollInvalidRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollInvalidRollView)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog MainSpec Roll Label
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.InvalidRollLabel = CreateLabel("Invalid Rolls:", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Roll.InvalidRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollInvalidRoll, "TOPLEFT", 5, 5)
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Roll Dialog Item Icon
@@ -2574,31 +2636,130 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
         return
     end
     -- Get data from message
-    local rollPattern = "^(.+%-.+) rolls (%d+) %((%d+)%-(%d+)%)$"
-    local author, roll, min, max = message:match(rollPattern)
-    if not author then
+    local colour = nil
+    local rollPattern = "^(.+)%-(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
+    local name, realm, rollValue, min, max = message:match(rollPattern)
+    if name then
+        local class = select(2, UnitClass(name .. "-" .. realm))
+        colour = classColor[class]
+    else
         rollPattern = "^(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
-        author, roll, min, max = message:match(rollPattern)
-        if not author then
+        name, rollValue, min, max = message:match(rollPattern)
+        if not name then
             return
         end
-        local _, realm = UnitFullName("player")
-        author = author .. "-" .. realm
+        local class = select(2, UnitClass(name))
+        colour = classColor[class]
+        realm = select(2, UnitFullName("player"))
     end
+    -- Get as numbers
+    rollValue = tonumber(rollValue)
+    min = tonumber(min)
+    max = tonumber(max)
+    
+    -- TODO REMOVE
     if max == 100 then
-        print(author .. " rolled MAIN SPEC with " .. roll)
+        print(name .. " rolled MAIN SPEC with " .. rollValue)
     elseif max == 50 then
-        print(author .. " rolled SECOND SPEC with " .. roll)
+        print(name .. " rolled SECOND SPEC with " .. rollValue)
     elseif max == 25 then
-        print(author .. " rolled TRANSMOG with " .. roll)
+        print(name .. " rolled TRANSMOG with " .. rollValue)
+    end
+    -- until here
+
+    -- Get associated rolls and frame
+    local rolls = widgets.Dialogs.Roll.InvalidRolls
+    local scrollView = widgets.Dialogs.Roll.ScrollInvalidRollView
+    if max == 100 then
+        rolls = widgets.Dialogs.Roll.MainSpecRolls
+        scrollView = widgets.Dialogs.Roll.ScrollMainSpecRollView
+    elseif max == 50 then
+        rolls = widgets.Dialogs.Roll.SecondSpecRolls
+        scrollView = widgets.Dialogs.Roll.ScrollSecondSpecRollView
+    elseif max == 25 then
+        rolls = widgets.Dialogs.Roll.TransmogRolls
+        scrollView = widgets.Dialogs.Roll.ScrollTransmogRollView
     end
 
-    -- TODO:
-    -- Create MainSpec, SecondSpec and Transmog Frames
-    -- Setup Name label
-    -- Setup Roll label
-    -- Setup Priority
-    -- Reorder Lists
+    local roll = nil
+
+    -- Prevent players from rolling more than once
+    local fullName = name .. "-" .. realm
+--    for k, v in pairs(rolls) do
+--        if v.PlayerLabel:GetText() == fullName then
+--            return
+--        end
+--    end
+    
+    -- Create frame for player roll
+    if #widgets.Dialogs.Roll.FreeRolls > 0 then
+        for k, v in pairs(widgets.Dialogs.Roll.FreeRolls) do
+            roll = v
+            table.remove(widgets.Dialogs.Roll.FreeRolls, k)
+            break
+        end
+        roll.Frame:SetParent(scrollView)
+        roll.Frame:Show()
+    else
+        roll = {}
+        roll.Frame = CreateFrame("Button", nil, scrollView, "BackdropTemplate")
+        roll.Frame:SetSize(scrollView:GetWidth() - 20, 30)
+        roll.Frame:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 2,
+        })
+        roll.Frame:SetBackdropColor(0, 0, 0, 1)
+        roll.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+        roll.PlayerLabel = CreateLabel(name .. "-" .. realm, roll.Frame, 10, -10, colour)
+        roll.RollLabel = CreateLabel("Roll:", roll.Frame, 200, -10, color.White)
+        roll.PriorityLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
+    end
+
+    roll.Frame:SetScript("OnClick", function(self)
+        widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
+        widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+        widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+    end)
+
+    roll.PlayerLabel:SetText(name .. "-" .. realm)
+    roll.PlayerLabel:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+    roll.RollLabel:SetText("Roll: " .. rollValue)
+
+    -- Get Priority
+    local priority = nil
+    if priority then
+        roll.PriorityLabel:SetText("Prio: " .. priority)
+        roll.PriorityLabel:Show()
+    else
+        roll.PriorityLabel:Hide()
+        -- Show button to add player
+    end
+
+    roll.Value = rollValue
+
+    table.insert(rolls, roll)
+    table.sort(rolls, function(a, b) 
+        if a.Priority == nil and b.Priority == nil then
+            return a.Value > b.Value
+        end
+        if a.Priority == nil then
+            return false 
+        end
+        if b.Priority == nil then
+            return true
+        end
+        return a.Priority > b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+    end)
+
+    print("Rolls: " .. #rolls)
+
+    local vOffset = -5
+    for _, r in pairs(rolls) do
+        r.Frame:SetPoint("TOPLEFT", 10, vOffset)
+        vOffset = vOffset - 32
+    end
 end)
 
 widgets.Dialogs.Roll.Tier = {}
@@ -2965,7 +3126,7 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
         v.Frame:Hide()
         table.insert(widgets.Dialogs.Roll.FreeRolls, v)
     end
-    widgets.Dialogs.Roll.MainRolls = {}
+    widgets.Dialogs.Roll.MainSpecRolls = {}
     for k, v in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
         v.Frame:Hide()
         table.insert(widgets.Dialogs.Roll.FreeRolls, v)
@@ -2976,6 +3137,11 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
         table.insert(widgets.Dialogs.Roll.FreeRolls, v)
     end
     widgets.Dialogs.Roll.TransmogRolls = {}
+    for k, v in pairs(widgets.Dialogs.Roll.InvalidRolls) do
+        v.Frame:Hide()
+        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
+    end
+    widgets.Dialogs.Roll.InvalidRolls = {}
 
     HandleLootAssignment()
 end)
