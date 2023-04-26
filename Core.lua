@@ -402,13 +402,6 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
         player.Container:SetBackdropBorderColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a)
     end
     player.Container:SetPoint("TOPLEFT", x, y)
-    player.Container:SetScript("OnClick", function(self)
-        if widgets.Dialogs.Roll.Frame:IsShown() then
-            widgets.Dialogs.Roll.AssignmentText:SetText(name)
-            widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
-            widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-        end
-    end)
 
     -------------------------------------------------------------------------------------------------------------------
     -- Create Remove Button
@@ -2427,7 +2420,7 @@ widgets.Dialogs.Roll.InvalidRolls = {}
 widgets.Dialogs.Roll.FreeRolls = {}
 widgets.Dialogs.Roll.AssignmentList = {}
 widgets.Dialogs.Roll.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Roll.Frame:SetSize(40 + 64 + 20 + 125 + 20 + 125 + 40, 820)
+widgets.Dialogs.Roll.Frame:SetSize(40 + 64 + 20 + 125 + 20 + 125 + 40, 860)
 widgets.Dialogs.Roll.Frame:SetPoint("TOPLEFT", widgets.Addon, "TOPRIGHT", 10, 0)
 widgets.Dialogs.Roll.Frame:SetBackdrop({
     bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -2439,6 +2432,67 @@ widgets.Dialogs.Roll.Frame:SetBackdropBorderColor(color.LightGray.r, color.Light
 widgets.Dialogs.Roll.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Roll.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Skip Button
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Roll.Skip = {}
+widgets.Dialogs.Roll.Skip.Button, widgets.Dialogs.Roll.Skip.Text = CreateButton(widgets.Dialogs.Roll.Frame, "SKIP", 102, 30, color.DarkGray, color.LightGray, color.Gold)
+widgets.Dialogs.Roll.Skip.Button:SetPoint("BOTTOMRIGHT", -15, 15)
+widgets.Dialogs.Roll.Skip.Button:SetScript("OnEnter", function(self)
+    if widgets.Dialogs.Roll.Roll.Button.rollActive then
+        return
+    end
+    local c = color.Gold
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Roll.Skip.Button:SetScript("OnLeave", function(self)
+    local c = color.LightGray
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Roll.Skip.Button:SetScript("OnClick", function(self)
+    if widgets.Dialogs.Roll.Roll.Button.rollActive then
+        return
+    end
+
+    widgets.Dialogs.Roll.ActiveItemLink = nil
+    widgets.Dialogs.Roll.TypeSelection = nil
+
+    widgets.Dialogs.Roll.Tier.Button.pushed = false
+    widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+    widgets.Dialogs.Roll.Rare.Button.pushed = false
+    widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+    widgets.Dialogs.Roll.Normal.Button.pushed = false
+    widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+    widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+    widgets.Dialogs.Roll.AssignmentText:SetText("NO ASSIGNMENT YET")
+    widgets.Dialogs.Roll.AssignmentText:SetTextColor(color.White.r, color.White.g, color.White.b)
+
+    for k, v in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+        v.Frame:Hide()
+        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
+    end
+    widgets.Dialogs.Roll.MainSpecRolls = {}
+    for k, v in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
+        v.Frame:Hide()
+        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
+    end
+    widgets.Dialogs.Roll.SecondSpecRolls = {}
+    for k, v in pairs(widgets.Dialogs.Roll.TransmogRolls) do
+        v.Frame:Hide()
+        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
+    end
+    widgets.Dialogs.Roll.TransmogRolls = {}
+    for k, v in pairs(widgets.Dialogs.Roll.InvalidRolls) do
+        v.Frame:Hide()
+        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
+    end
+    widgets.Dialogs.Roll.InvalidRolls = {}
+
+    HandleLootAssignment()
+end)
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Roll Dialog Header
 -----------------------------------------------------------------------------------------------------------------------
@@ -2637,10 +2691,11 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
     end
     -- Get data from message
     local colour = nil
+    local class = nil
     local rollPattern = "^(.+)%-(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
     local name, realm, rollValue, min, max = message:match(rollPattern)
     if name then
-        local class = select(2, UnitClass(name .. "-" .. realm))
+        class = select(2, UnitClass(name .. "-" .. realm))
         colour = classColor[class]
     else
         rollPattern = "^(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
@@ -2648,7 +2703,7 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
         if not name then
             return
         end
-        local class = select(2, UnitClass(name))
+        class = select(2, UnitClass(name))
         colour = classColor[class]
         realm = select(2, UnitFullName("player"))
     end
@@ -2656,16 +2711,6 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
     rollValue = tonumber(rollValue)
     min = tonumber(min)
     max = tonumber(max)
-    
-    -- TODO REMOVE
-    if max == 100 then
-        print(name .. " rolled MAIN SPEC with " .. rollValue)
-    elseif max == 50 then
-        print(name .. " rolled SECOND SPEC with " .. rollValue)
-    elseif max == 25 then
-        print(name .. " rolled TRANSMOG with " .. rollValue)
-    end
-    -- until here
 
     -- Get associated rolls and frame
     local rolls = widgets.Dialogs.Roll.InvalidRolls
@@ -2685,11 +2730,11 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
 
     -- Prevent players from rolling more than once
     local fullName = name .. "-" .. realm
---    for k, v in pairs(rolls) do
---        if v.PlayerLabel:GetText() == fullName then
---            return
---        end
---    end
+    for k, v in pairs(rolls) do
+        if v.PlayerLabel:GetText() == fullName then
+            return
+        end
+    end
     
     -- Create frame for player roll
     if #widgets.Dialogs.Roll.FreeRolls > 0 then
@@ -2711,30 +2756,211 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
         })
         roll.Frame:SetBackdropColor(0, 0, 0, 1)
         roll.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+        roll.Frame:SetScript("OnEnter", function(self) end)
+        roll.Frame:SetScript("OnLeave", function(self)
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end)
 
         roll.PlayerLabel = CreateLabel(name .. "-" .. realm, roll.Frame, 10, -10, colour)
         roll.RollLabel = CreateLabel("Roll:", roll.Frame, 200, -10, color.White)
         roll.PriorityLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
+        roll.Add = {}
+        roll.Add.Button, roll.Add.Text = CreateButton(roll.Frame, "ADD", 70, 25, color.DarkGray, color.LightGray, color.Gold)
+        roll.Add.Button:SetPoint("RIGHT", -10, 0)
+        roll.Add.Button:SetScript("OnEnter", function(self)
+            local c = color.Gold
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end)
+        roll.Add.Button:SetScript("OnLeave", function(self)
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end)
     end
 
-    roll.Frame:SetScript("OnClick", function(self)
-        widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
-        widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
-        widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-    end)
+    if max == 100 or (#widgets.Dialogs.Roll.MainSpecRolls == 0 and max == 50) or (#widgets.Dialogs.Roll.MainSpecRolls == 0 and #widgets.Dialogs.Roll.SecondSpecRolls == 0 and max == 25) then
+        roll.Frame:SetScript("OnEnter", function(self)
+            if not widgets.Dialogs.Roll.Roll.Button.rollActive then
+                local c = color.Gold
+                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            end
+        end)
+        roll.Frame:SetScript("OnClick", function(self)
+            if not widgets.Dialogs.Roll.Roll.Button.rollActive then
+                widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
+                widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                -- Only count main rolls
+                if max == 100 then
+                    widgets.Dialogs.Roll.RollType = "MainSpecRoll"
+                elseif max == 50 then
+                    widgets.Dialogs.Roll.RollType = "SecondSpecRoll"
+                elseif max == 25 then
+                    widgets.Dialogs.Roll.RollType = "TransmogRoll"
+                else
+                    widgets.Dialogs.Roll.RollType = "InvalidRoll"
+                end
+            end
+        end)
+    else
+        roll.Frame:SetScript("OnEnter", function(self) end)
+        roll.Frame:SetScript("OnClick", function(self) end)
+    end
 
+    roll.Priority = 0
     roll.PlayerLabel:SetText(name .. "-" .. realm)
     roll.PlayerLabel:SetTextColor(colour.r, colour.g, colour.b, colour.a)
     roll.RollLabel:SetText("Roll: " .. rollValue)
 
-    -- Get Priority
-    local priority = nil
-    if priority then
-        roll.PriorityLabel:SetText("Prio: " .. priority)
-        roll.PriorityLabel:Show()
-    else
-        roll.PriorityLabel:Hide()
-        -- Show button to add player
+    local orderName = nil
+    for _, v in pairs(widgets.Setups) do
+        if v.Name == addonDB.Tracking.Name then
+            local playerFound = false
+            for _, p in pairs(v.Players) do
+                if p.PlayerName == fullName then
+                    if max == 100 and widgets.Dialogs.Roll.Tier.Button.pushed then
+                        local num = tonumber(p.TierText:GetText()) + tonumber(p.TierDiffText:GetText())
+                        roll.Priority = num
+                        roll.PriorityLabel:SetText("Prio: "..num)
+                        roll.PriorityLabel:Show()
+                        orderName = "Tier Low"
+                    elseif max == 100 and widgets.Dialogs.Roll.Rare.Button.pushed then
+                        local num = tonumber(p.RareText:GetText()) + tonumber(p.RareDiffText:GetText())
+                        roll.Priority = num
+                        roll.PriorityLabel:SetText("Prio: "..num)
+                        roll.PriorityLabel:Show()
+                        orderName = "Rare Low"
+                    elseif max == 100 and widgets.Dialogs.Roll.Normal.Button.pushed then
+                        local num = tonumber(p.NormalText:GetText()) + tonumber(p.NormalDiffText:GetText())
+                        roll.Priority = num
+                        roll.PriorityLabel:SetText("Prio: "..num)
+                        roll.PriorityLabel:Show()
+                        orderName = "Normal Low"
+                    else
+                        roll.PriorityLabel:SetText("")
+                        roll.PriorityLabel:Hide()
+                    end
+                    roll.Add.Button:Hide()
+                    playerFound = true
+                    break
+                end
+            end
+            -- Player missing in setup
+            if not playerFound then
+                roll.Priority = -1
+                -- Hide label
+                roll.PriorityLabel:SetText("")
+                roll.PriorityLabel:Hide()
+                -- Show button
+                roll.Add.Button:Show()
+                roll.Add.Button:SetScript("OnClick", function(self)
+                    -- Add player frame
+                    for _, setup in pairs(widgets.Setups) do
+                        if setup.Tab.Button.pushed then
+                            local config = nil
+                            for _, c in pairs(configs) do
+                                if c.Name == setup.Name then
+                                    config = c
+                                    break
+                                end
+                            end
+                            -- Create new entry
+                            local playerInfo = { 
+                                ["Name"] = fullName,
+                                ["Rare"] = 0,
+                                ["Tier"] = 0,
+                                ["Normal"] = 0,
+                                ["Class"] = class
+                            }
+                            -- Create Player Frame
+                            local player = {}
+                            for fk, fv in pairs(widgets.FreePlayers) do 
+                                player = fv
+                                player.Container:Show()
+                                player.Container:SetParent(setup.Table)
+                                table.remove(widgets.FreePlayers, fk)
+                                break
+                            end
+                            CreatePlayerFrame(player, config, setup, widgets, setup.Table, playerInfo, setup.Table:GetWidth(), 0, #config.PlayerInfos * -32)
+
+                            -- Insert player data
+                            table.insert(setup.Players, player)
+                            table.insert(config.PlayerInfos, playerInfo)
+
+                            -- Sort by order
+                            if orderName then
+                                for _, v in pairs(orderConfigs) do
+                                    if v.Name == orderName then
+                                        table.sort(setup.Players, v["Callback"])
+                                        local vOffset = 0
+                                        local sortedOrder = {}
+                                        for i, p in pairs(setup.Players) do
+                                            sortedOrder[p.PlayerName] = i
+                                            p.Container:SetPoint("TOPLEFT", 0, vOffset)
+                                            vOffset = vOffset - 32
+                                        end
+                                        setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
+
+                                        table.sort(config["PlayerInfos"], function(a, b)
+                                            return sortedOrder[a.Name] < sortedOrder[b.Name]
+                                        end)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    -- Remove add button
+                    for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                        if r.PlayerLabel:GetText() == fullName then
+                            r.Add.Button:Hide()
+                            r.Priority = 0
+                            if widgets.Dialogs.Roll.Tier.Button.pushed or widgets.Dialogs.Roll.Rare.Button.pushed or widgets.Dialogs.Roll.Normal.Button.pushed then
+                                r.PriorityLabel:SetText("Prio: 0")
+                                r.PriorityLabel:Show()
+                            end
+                            table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                                if a.Priority == nil and b.Priority == nil then
+                                    return a.Value > b.Value
+                                end
+                                if a.Priority == nil then
+                                    return false 
+                                end
+                                if b.Priority == nil then
+                                    return true 
+                                end
+                                return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                            end)
+
+                            local vOffset = -5
+                            for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                                r.Frame:SetPoint("TOPLEFT", 10, vOffset)
+                                vOffset = vOffset - 32
+                            end
+                            break
+                        end
+                    end
+                    for _, r in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
+                        if r.PlayerLabel:GetText() == fullName then
+                            r.Add.Button:Hide()
+                            break
+                        end
+                    end
+                    for _, r in pairs(widgets.Dialogs.Roll.TransmogRolls) do
+                        if r.PlayerLabel:GetText() == fullName then
+                            r.Add.Button:Hide()
+                            break
+                        end
+                    end
+                    for _, r in pairs(widgets.Dialogs.Roll.InvalidRolls) do
+                        if r.PlayerLabel:GetText() == fullName then
+                            r.Add.Button:Hide()
+                            break
+                        end
+                    end
+                end)
+            end
+            break
+        end
     end
 
     roll.Value = rollValue
@@ -2748,17 +2974,28 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
             return false 
         end
         if b.Priority == nil then
-            return true
+            return true 
         end
-        return a.Priority > b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
     end)
-
-    print("Rolls: " .. #rolls)
 
     local vOffset = -5
     for _, r in pairs(rolls) do
         r.Frame:SetPoint("TOPLEFT", 10, vOffset)
         vOffset = vOffset - 32
+    end
+
+    if #widgets.Dialogs.Roll.MainSpecRolls > 0 then
+        for _, r in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
+            r.Frame:SetScript("OnClick", function(self) end)
+            r.Frame:SetScript("OnEnter", function(self) end)
+        end
+    end
+    if #widgets.Dialogs.Roll.MainSpecRolls > 0 or #widgets.Dialogs.Roll.SecondSpecRolls > 0 then
+        for _, r in pairs(widgets.Dialogs.Roll.TransmogRolls) do
+            r.Frame:SetScript("OnClick", function(self) end)
+            r.Frame:SetScript("OnEnter", function(self) end)
+        end
     end
 end)
 
@@ -2796,7 +3033,40 @@ widgets.Dialogs.Roll.Tier.Button:SetScript("OnClick", function(self)
                 setup.Order["Tier Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
                 setup.Order["Tier Low"].Button:Disable()
 
-                -- Update order
+                -- update order of rolls
+                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    -- Update priorities in rolls
+                    for _, player in pairs(setup.Players) do
+                        if player.PlayerName == roll.PlayerLabel:GetText() then
+                            local num = tonumber(player.TierText:GetText()) + tonumber(player.TierDiffText:GetText())
+                            roll.Priority = num
+                            roll.PriorityLabel:SetText("Prio: ".. num)
+                            roll.PriorityLabel:Show()
+                            break
+                        end
+                    end
+                end
+
+                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                    if a.Priority == nil and b.Priority == nil then
+                        return a.Value > b.Value
+                    end
+                    if a.Priority == nil then
+                        return false 
+                    end
+                    if b.Priority == nil then
+                        return true 
+                    end
+                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                end)
+
+                local vOffset = -5
+                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
+                    vOffset = vOffset - 32
+                end
+
+                -- Update order of table view
                 local setupOrder = nil
                 for _, v in pairs(orderConfigs) do
                     if v.Name == "Tier Low" then
@@ -2871,6 +3141,39 @@ widgets.Dialogs.Roll.Rare.Button:SetScript("OnClick", function(self)
                 setup.Order["Rare Low"].Button.pushed = true
                 setup.Order["Rare Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
                 setup.Order["Rare Low"].Button:Disable()
+
+                -- update order of rolls
+                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    -- Update priorities in rolls
+                    for _, player in pairs(setup.Players) do
+                        if player.PlayerName == roll.PlayerLabel:GetText() then
+                            local num = tonumber(player.RareText:GetText()) + tonumber(player.RareDiffText:GetText())
+                            roll.Priority = num
+                            roll.PriorityLabel:SetText("Prio: ".. num)
+                            roll.PriorityLabel:Show()
+                            break
+                        end
+                    end
+                end
+
+                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                    if a.Priority == nil and b.Priority == nil then
+                        return a.Value > b.Value
+                    end
+                    if a.Priority == nil then
+                        return false 
+                    end
+                    if b.Priority == nil then
+                        return true 
+                    end
+                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                end)
+
+                local vOffset = -5
+                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
+                    vOffset = vOffset - 32
+                end
 
                 -- Update order
                 local setupOrder = nil
@@ -2948,6 +3251,39 @@ widgets.Dialogs.Roll.Normal.Button:SetScript("OnClick", function(self)
                 setup.Order["Normal Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
                 setup.Order["Normal Low"].Button:Disable()
 
+                -- update order of rolls
+                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    -- Update priorities in rolls
+                    for _, player in pairs(setup.Players) do
+                        if player.PlayerName == roll.PlayerLabel:GetText() then
+                            local num = tonumber(player.NormalText:GetText()) + tonumber(player.NormalDiffText:GetText())
+                            roll.Priority = num
+                            roll.PriorityLabel:SetText("Prio: ".. num)
+                            roll.PriorityLabel:Show()
+                            break
+                        end
+                    end
+                end
+
+                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                    if a.Priority == nil and b.Priority == nil then
+                        return a.Value > b.Value
+                    end
+                    if a.Priority == nil then
+                        return false 
+                    end
+                    if b.Priority == nil then
+                        return true 
+                    end
+                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                end)
+
+                local vOffset = -5
+                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
+                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
+                    vOffset = vOffset - 32
+                end
+
                 -- Update order
                 local setupOrder = nil
                 for _, v in pairs(orderConfigs) do
@@ -3007,102 +3343,105 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
     end
 
     local playerName = widgets.Dialogs.Roll.AssignmentText:GetText()
-    for _, setup in pairs(widgets.Setups) do
-        if setup.Tab.Button.pushed then
-            for _, player in pairs(setup.Players) do
-                if player.PlayerName == playerName then
-                    if widgets.Dialogs.Roll.TypeSelection == "Tier" then
-                        local num = tonumber(player.TierDiffText:GetText()) + 1
-                        if num > 0 then
-                            local g = color.Green
-                            player.TierDiffText:SetText("+" .. num)
-                            player.TierDiffText:SetTextColor(g.r, g.g, g.b)
-                        elseif num < 0 then
-                            local r = color.Red
-                            player.TierDiffText:SetText(num)
-                            player.TierDiffText:SetTextColor(r.r, r.g, r.b)
-                        else
-                            local r = color.White
-                            player.TierDiffText:SetText(0)
-                            player.TierDiffText:SetTextColor(r.r, r.g, r.b)
-                        end
-                    elseif widgets.Dialogs.Roll.TypeSelection == "Rare" then
-                        local num = tonumber(player.RareDiffText:GetText()) + 1
-                        if num > 0 then
-                            local g = color.Green
-                            player.RareDiffText:SetText("+" .. num)
-                            player.RareDiffText:SetTextColor(g.r, g.g, g.b)
-                        elseif num < 0 then
-                            local r = color.Red
-                            player.RareDiffText:SetText(num)
-                            player.RareDiffText:SetTextColor(r.r, r.g, r.b)
-                        else
-                            local r = color.White
-                            player.RareDiffText:SetText(0)
-                            player.RareDiffText:SetTextColor(r.r, r.g, r.b)
-                        end
-                    elseif widgets.Dialogs.Roll.TypeSelection == "Normal" then
-                        local num = tonumber(player.NormalDiffText:GetText()) + 1
-                        if num > 0 then
-                            local g = color.Green
-                            player.NormalDiffText:SetText("+" .. num)
-                            player.NormalDiffText:SetTextColor(g.r, g.g, g.b)
-                        elseif num < 0 then
-                            local r = color.Red
-                            player.NormalDiffText:SetText(num)
-                            player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
-                        else
-                            local r = color.White
-                            player.NormalDiffText:SetText(0)
-                            player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
-                        end
-                    else
-                        print("[ERROR] No loot category selected!")
-                    end
-                    -- Update order if active
-                    local activeOrder = nil
-                    for name, orderBtn in pairs(setup.Order) do
-                        if orderBtn.Button.pushed then
-                            for _, order in pairs(orderConfigs) do
-                                if order.Name == name then
-                                    activeOrder = order
-                                    break
-                                end
+    if widgets.Dialogs.Roll.RollType == "MainSpecRoll" then
+        for _, setup in pairs(widgets.Setups) do
+            if setup.Tab.Button.pushed then
+                for _, player in pairs(setup.Players) do
+                    if player.PlayerName == playerName then
+                        if widgets.Dialogs.Roll.TypeSelection == "Tier" then
+                            local num = tonumber(player.TierDiffText:GetText()) + 1
+                            if num > 0 then
+                                local g = color.Green
+                                player.TierDiffText:SetText("+" .. num)
+                                player.TierDiffText:SetTextColor(g.r, g.g, g.b)
+                            elseif num < 0 then
+                                local r = color.Red
+                                player.TierDiffText:SetText(num)
+                                player.TierDiffText:SetTextColor(r.r, r.g, r.b)
+                            else
+                                local r = color.White
+                                player.TierDiffText:SetText(0)
+                                player.TierDiffText:SetTextColor(r.r, r.g, r.b)
                             end
-                            break
+                        elseif widgets.Dialogs.Roll.TypeSelection == "Rare" then
+                            local num = tonumber(player.RareDiffText:GetText()) + 1
+                            if num > 0 then
+                                local g = color.Green
+                                player.RareDiffText:SetText("+" .. num)
+                                player.RareDiffText:SetTextColor(g.r, g.g, g.b)
+                            elseif num < 0 then
+                                local r = color.Red
+                                player.RareDiffText:SetText(num)
+                                player.RareDiffText:SetTextColor(r.r, r.g, r.b)
+                            else
+                                local r = color.White
+                                player.RareDiffText:SetText(0)
+                                player.RareDiffText:SetTextColor(r.r, r.g, r.b)
+                            end
+                        elseif widgets.Dialogs.Roll.TypeSelection == "Normal" then
+                            local num = tonumber(player.NormalDiffText:GetText()) + 1
+                            if num > 0 then
+                                local g = color.Green
+                                player.NormalDiffText:SetText("+" .. num)
+                                player.NormalDiffText:SetTextColor(g.r, g.g, g.b)
+                            elseif num < 0 then
+                                local r = color.Red
+                                player.NormalDiffText:SetText(num)
+                                player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
+                            else
+                                local r = color.White
+                                player.NormalDiffText:SetText(0)
+                                player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
+                            end
+                        else
+                            print("[ERROR] No loot category selected!")
                         end
-                    end
-                    if activeOrder then
-                        table.sort(setup.Players, activeOrder["Callback"])
-                        local vOffset = 0
-
-                        local sortedOrder = {}
-                        for i, player in pairs(setup.Players) do
-                            sortedOrder[player.PlayerName] = i
-                            player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                            vOffset = vOffset - 32
-                        end
-                        setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
-                        for k, config in pairs(configs) do
-                            if config.Name == setup.Name then
-                                table.sort(config["PlayerInfos"], function(a, b)
-                                    return sortedOrder[a.Name] < sortedOrder[b.Name]
-                                end)
+                        -- Update order if active
+                        local activeOrder = nil
+                        for name, orderBtn in pairs(setup.Order) do
+                            if orderBtn.Button.pushed then
+                                for _, order in pairs(orderConfigs) do
+                                    if order.Name == name then
+                                        activeOrder = order
+                                        break
+                                    end
+                                end
                                 break
                             end
                         end
+                        if activeOrder then
+                            table.sort(setup.Players, activeOrder["Callback"])
+                            local vOffset = 0
+
+                            local sortedOrder = {}
+                            for i, player in pairs(setup.Players) do
+                                sortedOrder[player.PlayerName] = i
+                                player.Container:SetPoint("TOPLEFT", 0, vOffset)
+                                vOffset = vOffset - 32
+                            end
+                            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
+
+                            for k, config in pairs(configs) do
+                                if config.Name == setup.Name then
+                                    table.sort(config["PlayerInfos"], function(a, b)
+                                        return sortedOrder[a.Name] < sortedOrder[b.Name]
+                                    end)
+                                    break
+                                end
+                            end
+                        end
+                        break
                     end
-                    break
                 end
+                break
             end
-            break
         end
     end
 
     local assignment = {
         ItemLink = widgets.Dialogs.Roll.ActiveItemLink,
         PlayerName = playerName,
+        RollType = widgets.Dialogs.Roll.RollType
     }
     table.insert(widgets.Dialogs.Roll.AssignmentList, assignment)
 
