@@ -338,6 +338,9 @@ end
 -- Create Heading
 -----------------------------------------------------------------------------------------------------------------------
 function HandleLootAssignment() 
+    if widgets.Summary.Frame:IsShown() then
+        return
+    end
     if #widgets.Dialogs.Roll.Items > 0 then
         if widgets.Dialogs.Roll.ActiveItemLink then
             return
@@ -370,7 +373,88 @@ function HandleLootAssignment()
         if widgets.Dialogs.Roll.Frame:IsShown() then
             widgets.Dialogs.Roll.Frame:Hide()
         end
-        -- TODO Show Summary if no more Items and AssignmentList has entries
+        if #widgets.Dialogs.Roll.AssignmentList > 0 then
+            local yOffset = -30
+            for _, assignment in pairs(widgets.Dialogs.Roll.AssignmentList) do
+                local item = nil
+                -- Setup items in summary view
+                if #widgets.Summary.FreeItems > 0 then
+                    for k, v in pairs(widgets.Summary.FreeItems) do
+                        item = v
+                        table.remove(widgets.Summary.FreeItems, k)
+                        break
+                    end
+                else
+                    item = {}
+
+                    -- Setup frame
+                    item.Frame = CreateFrame("Frame", nil, widgets.Summary.Frame, "BackdropTemplate")
+                    item.Frame:SetSize(widgets.Summary.Frame:GetWidth() - 20, 84)
+                    item.Frame:SetBackdrop({
+                        bgFile = "Interface\\Buttons\\WHITE8x8",
+                        edgeFile = "Interface\\Buttons\\WHITE8x8",
+                        edgeSize = 2,
+                    })
+                    item.Frame:SetBackdropColor(0, 0, 0, 1)
+                    item.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+                    -- Setup item icon
+                    item.ItemIcon = CreateFrame("Frame", nil, item.Frame, "BackdropTemplate")
+                    item.ItemIcon:SetSize(64, 64)
+                    item.ItemIcon:SetPoint("TOPLEFT", 40, -10)
+                    item.ItemIcon:SetBackdrop({
+                        bgFile = "Interface\\Buttons\\WHITE8x8",
+                        edgeFile = "Interface\\Buttons\\WHITE8x8",
+                        edgeSize = 2,
+                    })
+                    item.ItemIcon:SetBackdropColor(0, 0, 0, 1)
+                    item.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+                    item.ItemTexture = item.ItemIcon:CreateTexture(nil, "ARTWORK")
+                    item.ItemTexture:SetAllPoints()
+
+                    -- Setup Player Label
+                    item.PlayerLabel = CreateLabel("", item.Frame, 150, 0, color.Gold, "LEFT", 14)
+
+                    -- Insert
+                    table.insert(widgets.Summary.Items, item)
+                end
+
+                -- Update frame
+                item.Frame:Show()
+
+                -- Update icon
+                local itemTexture = select(10, GetItemInfo(assignment.ItemLink))
+                item.ItemTexture:SetTexture(itemTexture)
+                item.ItemIcon:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink(assignment.ItemLink)
+                    GameTooltip:Show()
+                end)
+                widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                end)
+
+                -- Update Player Label
+                item.PlayerLabel:SetText(assignment.PlayerName)
+                local c = classColor[assignment.Class]
+                item.PlayerLabel:SetTextColor(c.r, c.g, c.b, c.a)
+
+                -- Update position
+                item.Frame:SetPoint("TOPLEFT", 10, yOffset)
+                yOffset = yOffset - 86
+            end
+            widgets.Summary.Frame:SetHeight(-yOffset + 50)
+            
+            if widgets.Addon:IsShown() then
+                widgets.Summary.Frame:ClearAllPoints()
+                widgets.Summary.Frame:SetPoint("TOPLEFT", widgets.Addon, "TOPRIGHT", 10, 0)
+            else
+                widgets.Summary.Frame:ClearAllPoints()
+                widgets.Summary.Frame:SetPoint("CENTER", 0, 0)
+            end
+            widgets.Summary.Frame:Show()
+        end
     end
 end
 
@@ -2790,6 +2874,7 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
                 widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
                 widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
                 widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                widgets.Dialogs.Roll.Class = class
                 -- Only count main rolls
                 if max == 100 then
                     widgets.Dialogs.Roll.RollType = "MainSpecRoll"
@@ -3441,7 +3526,8 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
     local assignment = {
         ItemLink = widgets.Dialogs.Roll.ActiveItemLink,
         PlayerName = playerName,
-        RollType = widgets.Dialogs.Roll.RollType
+        RollType = widgets.Dialogs.Roll.RollType,
+        Class = widgets.Dialogs.Roll.Class
     }
     table.insert(widgets.Dialogs.Roll.AssignmentList, assignment)
 
@@ -3482,6 +3568,62 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
     end
     widgets.Dialogs.Roll.InvalidRolls = {}
 
+    HandleLootAssignment()
+end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Summary Dialog
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Summary = {}
+widgets.Summary.Items = {}
+widgets.Summary.FreeItems = {}
+widgets.Summary.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+widgets.Summary.Frame:SetSize(390, 450)
+widgets.Summary.Frame:SetPoint("CENTER", 0, 0)
+widgets.Summary.Frame:SetMovable(true)
+widgets.Summary.Frame:EnableMouse(true)
+widgets.Summary.Frame:RegisterForDrag("LeftButton")
+widgets.Summary.Frame:SetScript("OnDragStart", widgets.Summary.Frame.StartMoving)
+widgets.Summary.Frame:SetScript("OnDragStop", widgets.Summary.Frame.StopMovingOrSizing)
+widgets.Summary.Frame:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8x8",
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+})
+widgets.Summary.Frame:SetBackdropColor(0, 0, 0, 1)
+widgets.Summary.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+widgets.Summary.Frame:SetFrameStrata("DIALOG")
+widgets.Summary.Frame:Hide()
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Summary Dialog Header
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Summary.Header = CreateHeading("SUMMARY", widgets.Summary.Frame:GetWidth() - 10, widgets.Summary.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Summary Dialog Close Button
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Summary.Close = {}
+widgets.Summary.Close.Button, widgets.Summary.Close.Text = CreateButton(widgets.Summary.Frame, "CLOSE", 102, 30, color.DarkGray, color.LightGray, color.Gold)
+widgets.Summary.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Summary.Frame, "BOTTOMRIGHT", -10, 10)
+widgets.Summary.Close.Button:SetScript("OnEnter", function(self)
+    local c = color.Gold
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Summary.Close.Button:SetScript("OnLeave", function(self)
+    local c = color.LightGray
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Summary.Close.Button:SetScript("OnClick", function(self)
+    widgets.Dialogs.Roll.AssignmentList = {}
+    widgets.Summary.Frame:Hide()
+    -- Free all frames
+    for _, w in pairs(widgets.Summary.Items) do
+        table.insert(widgets.Summary.FreeItems, w)
+        w.Frame:Hide()
+    end
+    widgets.Summary.Items = {}
+    -- Show Roll frame again if rolls came up while summary was shown
     HandleLootAssignment()
 end)
 
