@@ -14,6 +14,9 @@ addonDB.Widgets.Setups = {}
 addonDB.Widgets.FreeSetups = {}
 addonDB.Widgets.FreePlayers = {}
 addonDB.Widgets.Dialogs = {}
+addonDB.Options = {}
+addonDB.Options.TierItems = {}
+addonDB.Options.RareItems = {}
 local widgets = addonDB.Widgets
 local configs = addonDB.Config
 local setups = widgets.Setups
@@ -24,7 +27,47 @@ addonDB.Tracking.Name = nil
 addonDB.Testing = true
 
 -----------------------------------------------------------------------------------------------------------------------
--- Debugging: Dump Table Formatted
+-- Rare Items
+-----------------------------------------------------------------------------------------------------------------------
+local RareItems = {
+    195480,
+    194301,
+    195526,
+    195527,
+}
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Tier Items
+-----------------------------------------------------------------------------------------------------------------------
+local TierItems = {
+    196488,
+    196598,
+    196603,
+    196593,
+
+    196587,
+    196597,
+    196602,
+    196592,
+
+    196586,
+    196596,
+    196601,
+    196591,
+
+    196589,
+    196599,
+    196604,
+    196594,
+
+    196590,
+    196600,
+    196605,
+    196595,
+}
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Whitespace String
 -----------------------------------------------------------------------------------------------------------------------
 local function Ws(num)
     local s = ""
@@ -34,6 +77,9 @@ local function Ws(num)
     return s
 end
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Dump Table into String
+-----------------------------------------------------------------------------------------------------------------------
 local function DumpValue(name, value, depth)
     local depth = depth or 0
     if type(value) == "table" then
@@ -65,7 +111,7 @@ local function CreateFrame(frame, name, parent, flags)
 end
 
 -----------------------------------------------------------------------------------------------------------------------
--- Setup Color Map
+-- GUI Color Map
 -----------------------------------------------------------------------------------------------------------------------
 local color = {
     ["White"] = { ["r"] = 1, ["g"] = 1, ["b"] = 1, ["a"] = 1 },
@@ -81,6 +127,9 @@ local color = {
     ["Red"] = { ["r"] = 0.8, ["g"] = 0, ["b"] = 0, ["a"] = 1 },
 }
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Class Color Map
+-----------------------------------------------------------------------------------------------------------------------
 local classColor = {
     ["DEATHKNIGHT"] = {r = 0.77, g = 0.12, b = 0.23},
     ["DEMONHUNTER"] = {r = 0.64, g = 0.19, b = 0.79},
@@ -186,6 +235,18 @@ local function IsDialogShown()
 end
 
 -----------------------------------------------------------------------------------------------------------------------
+-- Check if value is in Array
+-----------------------------------------------------------------------------------------------------------------------
+local function IsInArray(array, value)
+    for _, v in pairs(array) do
+        if (v - value) == 0 then
+            return true
+        end
+    end
+    return false
+end
+
+-----------------------------------------------------------------------------------------------------------------------
 -- Check if Roll is Shown
 -----------------------------------------------------------------------------------------------------------------------
 local function IsRollShown()
@@ -207,6 +268,14 @@ local function SplitString(inputstr, sep)
 end
 
 -----------------------------------------------------------------------------------------------------------------------
+-- Get item id from item link
+-----------------------------------------------------------------------------------------------------------------------
+local function GetIdFromLink(itemLink)
+    local match = SplitString(itemLink, ":")
+    return match[2]
+end
+
+-----------------------------------------------------------------------------------------------------------------------
 -- Check if Player is Already Known
 -----------------------------------------------------------------------------------------------------------------------
 local function PlayerKnown(player, setup)
@@ -216,6 +285,22 @@ local function PlayerKnown(player, setup)
         end
     end
     return false
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Create String from Array
+-----------------------------------------------------------------------------------------------------------------------
+local function ArrayToString(array)
+    local first = true
+    local str= ""
+    for _, v in pairs(array) do
+        if not first then
+            str = str .. ", "
+        end
+        str = str .. v 
+        first = false
+    end
+    return str
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -338,10 +423,13 @@ end
 -- Create Heading
 -----------------------------------------------------------------------------------------------------------------------
 function HandleLootAssignment() 
+    -- If summary is active, wait until closed
     if widgets.Summary.Frame:IsShown() then
         return
     end
+    -- If items are ready to be rolled
     if #widgets.Dialogs.Roll.Items > 0 then
+        -- If items is actively rolled on, roll dialog is shown, skip for now
         if widgets.Dialogs.Roll.ActiveItemLink then
             return
         end
@@ -349,6 +437,25 @@ function HandleLootAssignment()
             -- Update Item Icon
             widgets.Dialogs.Roll.ActiveItemLink = v
             local itemTexture = select(10, GetItemInfo(widgets.Dialogs.Roll.ActiveItemLink))
+            local itemId = GetIdFromLink(widgets.Dialogs.Roll.ActiveItemLink)
+
+            if IsInArray(addonDB.Options.TierItems, itemId) then
+                widgets.Dialogs.Roll.Tier.Button.pushed = true
+                widgets.Dialogs.Roll.Tier.Button:Disable()
+                widgets.Dialogs.Roll.TypeSelection = "Tier"
+                widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            elseif IsInArray(addonDB.Options.RareItems, itemId) then
+                widgets.Dialogs.Roll.Rare.Button.pushed = true
+                widgets.Dialogs.Roll.Rare.Button:Disable()
+                widgets.Dialogs.Roll.TypeSelection = "Rare"
+                widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            else
+                widgets.Dialogs.Roll.Normal.Button.pushed = true
+                widgets.Dialogs.Roll.Normal.Button:Disable()
+                widgets.Dialogs.Roll.TypeSelection = "Normal"
+                widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            end
+
             widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
             widgets.Dialogs.Roll.ItemIcon:SetScript("OnEnter", function(self)
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -1694,6 +1801,129 @@ local function SetupNewEntry(cfg, show)
 end
 
 -----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options = {}
+widgets.Dialogs.Options.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+widgets.Dialogs.Options.Frame:SetSize(650, 600)
+widgets.Dialogs.Options.Frame:SetMovable(true)
+widgets.Dialogs.Options.Frame:EnableMouse(true)
+widgets.Dialogs.Options.Frame:RegisterForDrag("LeftButton")
+widgets.Dialogs.Options.Frame:SetScript("OnDragStart", widgets.Addon.StartMoving)
+widgets.Dialogs.Options.Frame:SetScript("OnDragStop", widgets.Addon.StopMovingOrSizing)
+widgets.Dialogs.Options.Frame:SetPoint("CENTER", widgets.Addon, "CENTER", 0, 0)
+widgets.Dialogs.Options.Frame:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8x8",
+    edgeFile = "Interface\\Buttons\\WHITE8x8",
+    edgeSize = 2,
+})
+widgets.Dialogs.Options.Frame:SetBackdropColor(0, 0, 0, 1)
+widgets.Dialogs.Options.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+widgets.Dialogs.Options.Frame:SetFrameStrata("DIALOG")
+widgets.Dialogs.Options.Frame:Hide()
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", widgets.Dialogs.Options.Frame:GetWidth() - 10, widgets.Dialogs.Options.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Close Button 
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.Close = {}
+widgets.Dialogs.Options.Close.Button, widgets.Dialogs.Options.Close.Text = CreateButton(widgets.Dialogs.Options.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
+widgets.Dialogs.Options.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Options.Frame, "BOTTOMRIGHT", -10, 10)
+widgets.Dialogs.Options.Close.Button:SetScript("OnEnter", function(self)
+    local c = color.Gold
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Options.Close.Button:SetScript("OnLeave", function(self)
+    local c = color.LightGray
+    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Options.Close.Button:SetScript("OnClick", function(self)
+    widgets.Dialogs.Options.Frame:Hide()
+end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Tier Identifier Inputfield
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, widgets.Dialogs.Options.Frame, "InputBoxTemplate")
+widgets.Dialogs.Options.TierIdInputField:SetWidth(widgets.Dialogs.Options.Frame:GetWidth() - 60)
+widgets.Dialogs.Options.TierIdInputField:SetHeight(30)
+widgets.Dialogs.Options.TierIdInputField:SetPoint("TOP", widgets.Dialogs.Options.Frame, "TOP", 0, -50)
+widgets.Dialogs.Options.TierIdInputField:SetAutoFocus(false)
+widgets.Dialogs.Options.TierIdInputField:SetMaxLetters(0)
+widgets.Dialogs.Options.TierIdInputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+widgets.Dialogs.Options.TierIdInputField:SetScript("OnTextChanged", function(self) 
+    local c = color.White
+    self:SetTextColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Options.TierIdInputField:SetScript("OnEnterPressed", function(self) 
+    local text = widgets.Dialogs.Options.TierIdInputField:GetText()
+    local split = SplitString(text, ",")
+    local numbers = {}
+    for _, v in pairs(split) do
+        local num = tonumber(v)
+        if not num then
+            local c = color.Red
+            widgets.Dialogs.Options.TierIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
+            return
+        end
+        table.insert(numbers, num)
+    end
+    addonDB.Options.TierItems = numbers
+end)
+widgets.Dialogs.Options.TierIdInputField:SetScript("OnEscapePressed", function(self) 
+    self:SetText(ArrayToString(addonDB.Options.TierItems))
+end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Tier Identifier Label 
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Options.TierIdLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Options.TierIdInputField, "TOPLEFT", 10, 0)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Tier Identifier Inputfield
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, widgets.Dialogs.Options.Frame, "InputBoxTemplate")
+widgets.Dialogs.Options.RareIdInputField:SetWidth(widgets.Dialogs.Options.Frame:GetWidth() - 60)
+widgets.Dialogs.Options.RareIdInputField:SetHeight(30)
+widgets.Dialogs.Options.RareIdInputField:SetPoint("TOP", widgets.Dialogs.Options.Frame, "TOP", 0, -100)
+widgets.Dialogs.Options.RareIdInputField:SetAutoFocus(false)
+widgets.Dialogs.Options.RareIdInputField:SetMaxLetters(0)
+widgets.Dialogs.Options.RareIdInputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+widgets.Dialogs.Options.RareIdInputField:SetScript("OnTextChanged", function(self) 
+    local c = color.White
+    self:SetTextColor(c.r, c.g, c.b, c.a)
+end)
+widgets.Dialogs.Options.RareIdInputField:SetScript("OnEnterPressed", function(self) 
+    local text = widgets.Dialogs.Options.RareIdInputField:GetText()
+    local split = SplitString(text, ",")
+    local numbers = {}
+    for _, v in pairs(split) do
+        local num = tonumber(v)
+        if not num then
+            local c = color.Red
+            widgets.Dialogs.Options.RareIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
+            return
+        end
+        table.insert(numbers, num)
+    end
+    addonDB.Options.RareItems = numbers
+end)
+widgets.Dialogs.Options.RareIdInputField:SetScript("OnEscapePressed", function(self) 
+    self:SetText(ArrayToString(addonDB.Options.RareItems))
+end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Options Dialog: Rare Identifier Label 
+-----------------------------------------------------------------------------------------------------------------------
+widgets.Dialogs.Options.RareIdLabel = CreateLabel("Rare Identifiers:", widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+widgets.Dialogs.Options.RareIdLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Options.RareIdInputField, "TOPLEFT", 10, 0)
+
+-----------------------------------------------------------------------------------------------------------------------
 -- Print Dialog
 -----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Print = {}
@@ -1715,8 +1945,14 @@ widgets.Dialogs.Print.Frame:SetBackdropBorderColor(color.LightGray.r, color.Ligh
 widgets.Dialogs.Print.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Print.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Print Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Print.Header = CreateHeading("PRINT", widgets.Dialogs.Print.Frame:GetWidth() - 10, widgets.Dialogs.Print.Frame, 5, -10, true)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Print Dialog: Scroll Area 
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Print.Scroll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Print.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
 widgets.Dialogs.Print.Scroll:SetPoint("TOPLEFT", 6, -30)
 widgets.Dialogs.Print.Scroll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -27, 40)
@@ -1729,6 +1965,9 @@ widgets.Dialogs.Print.Scroll:SetBackdropColor(0, 0, 0, 1)
 widgets.Dialogs.Print.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 widgets.Dialogs.Print.Scroll:SetClipsChildren(true)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Print Dialog: EditBox
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Print.EditBox = CreateFrame("EditBox", nil, widgets.Dialogs.Print.Scroll)
 widgets.Dialogs.Print.EditBox:SetMultiLine(true)
 widgets.Dialogs.Print.EditBox:SetFontObject("ChatFontNormal")
@@ -1738,6 +1977,9 @@ widgets.Dialogs.Print.EditBox:SetScript("OnEscapePressed", function(self) self:C
 
 widgets.Dialogs.Print.Scroll:SetScrollChild(widgets.Dialogs.Print.EditBox)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Print Dialog: Close Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Print.Close = {}
 widgets.Dialogs.Print.Close.Button, widgets.Dialogs.Print.Close.Text = CreateButton(widgets.Dialogs.Print.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
 widgets.Dialogs.Print.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -10, 10)
@@ -1773,10 +2015,24 @@ widgets.Dialogs.Rename.Frame:SetBackdropBorderColor(color.LightGray.r, color.Lig
 widgets.Dialogs.Rename.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Rename.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Rename Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Rename.Header = CreateHeading("RENAME", widgets.Dialogs.Rename.Frame:GetWidth() - 10, widgets.Dialogs.Rename.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Rename Dialog: Escape Label 
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Rename.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.Rename.Frame, 10, 10, color.White, "BOTTOMLEFT")
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Rename Dialog: Enter Label 
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Rename.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.Rename.Frame, -10, 10, color.White, "BOTTOMRIGHT")
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Rename Dialog: Inputfield
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Rename.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Rename.Frame, "InputBoxTemplate")
 widgets.Dialogs.Rename.InputField:SetWidth(widgets.Dialogs.Rename.Frame:GetWidth() - 30)
 widgets.Dialogs.Rename.InputField:SetHeight(30)
@@ -1875,8 +2131,20 @@ widgets.Dialogs.Export.Frame:SetBackdropColor(0, 0, 0, 1)
 widgets.Dialogs.Export.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
 widgets.Dialogs.Export.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Export.Frame:Hide()
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Export Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Export.Header = CreateHeading("EXPORT", widgets.Dialogs.Export.Frame:GetWidth() - 10, widgets.Dialogs.Export.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Export Dialog: Escape Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Export.Escape = CreateLabel("<ESC>: Close", widgets.Dialogs.Export.Frame, 0, 10, color.White, "BOTTOM")
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Export Dialog: InputField
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Export.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Export.Frame, "InputBoxTemplate")
 widgets.Dialogs.Export.InputField:SetWidth(widgets.Dialogs.Export.Frame:GetWidth() - 30)
 widgets.Dialogs.Export.InputField:SetHeight(30)
@@ -1908,7 +2176,15 @@ widgets.Dialogs.Conflict.Frame:SetBackdropColor(0, 0, 0, 1)
 widgets.Dialogs.Conflict.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
 widgets.Dialogs.Conflict.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Conflict.Frame:Hide()
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Conflict Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Conflict.Header = CreateHeading("NAME CONFLICT", widgets.Dialogs.Conflict.Frame:GetWidth() - 10, widgets.Dialogs.Conflict.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Conflict Dialog: Update Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Conflict.Update = {}
 widgets.Dialogs.Conflict.Update.Button, widgets.Dialogs.Conflict.Update.Text = CreateButton(widgets.Dialogs.Conflict.Frame, "Update", 102, 35, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Conflict.Update.Button:SetPoint("TOPLEFT", widgets.Dialogs.Conflict.Frame, "TOPLEFT", 15, -30)
@@ -1970,6 +2246,10 @@ widgets.Dialogs.Conflict.Update.Button:SetScript("OnClick", function(self)
     widgets.Dialogs.Conflict.config = nil
     widgets.Dialogs.Conflict.Frame:Hide()
 end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Conflict Dialog: Rename Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Conflict.Rename = {}
 widgets.Dialogs.Conflict.Rename.Button, widgets.Dialogs.Conflict.Rename.Text = CreateButton(widgets.Dialogs.Conflict.Frame, "Rename", 102, 35, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Conflict.Rename.Button:SetPoint("TOPRIGHT", widgets.Dialogs.Conflict.Frame, "TOPRIGHT", -15, -30)
@@ -2008,10 +2288,24 @@ widgets.Dialogs.Import.Frame:SetBackdropBorderColor(color.LightGray.r, color.Lig
 widgets.Dialogs.Import.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.Import.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Import Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Import.Header = CreateHeading("IMPORT", widgets.Dialogs.Import.Frame:GetWidth() - 10, widgets.Dialogs.Import.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Import Dialog: Escape Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Import.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.Import.Frame, 10, 10, color.White, "BOTTOMLEFT")
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Import Dialog: Enter Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Import.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.Import.Frame, -10, 10, color.White, "BOTTOMRIGHT")
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Import Dialog: InputField
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Import.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Import.Frame, "InputBoxTemplate")
 widgets.Dialogs.Import.InputField:SetWidth(widgets.Dialogs.Import.Frame:GetWidth() - 30)
 widgets.Dialogs.Import.InputField:SetHeight(30)
@@ -2085,11 +2379,20 @@ widgets.Dialogs.ActivateRaid.Frame:SetBackdropBorderColor(color.LightGray.r, col
 widgets.Dialogs.ActivateRaid.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.ActivateRaid.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.Header = CreateHeading("RAID TABLES", widgets.Dialogs.ActivateRaid.Frame:GetWidth() - 20, widgets.Dialogs.ActivateRaid.Frame, 5, -10, false, 14)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: Label 
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.Label = CreateLabel("Start tracking by " .. addonName .. " for this group?", widgets.Dialogs.ActivateRaid.Frame, 0, -35, color.White, "TOP", 14)
 widgets.Dialogs.ActivateRaid.Label:SetWidth(widgets.Dialogs.ActivateRaid.Frame:GetWidth() - 20)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: Raid Selection
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.RaidSelection = CreateFrame("Frame", nil, widgets.Dialogs.ActivateRaid.Frame, "UIDropDownMenuTemplate")
 widgets.Dialogs.ActivateRaid.RaidSelection:SetPoint("CENTER", widgets.Dialogs.ActivateRaid.Frame, "CENTER", 35, -10)
 widgets.Dialogs.ActivateRaid.SetupSelection = function()
@@ -2118,8 +2421,14 @@ widgets.Dialogs.ActivateRaid.SetupSelection = function()
     UIDropDownMenu_JustifyText(widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER")
 end
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: Selection Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.SelectionLabel = CreateLabel("Raid Name:", widgets.Dialogs.ActivateRaid.Frame, -60, -8, color.Gold, "CENTER", 12)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: Yes Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.Yes = {}
 widgets.Dialogs.ActivateRaid.Yes.Button, widgets.Dialogs.ActivateRaid.Yes.Text = CreateButton(widgets.Dialogs.ActivateRaid.Frame, "YES", 102, 28, color.DarkGray, color.LightGray)
 widgets.Dialogs.ActivateRaid.Yes.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.ActivateRaid.Frame, "BOTTOMRIGHT", -45, 10)
@@ -2145,6 +2454,9 @@ widgets.Dialogs.ActivateRaid.Yes.Button:SetScript("OnClick", function(self)
     widgets.Dialogs.ActivateRaid.Frame:Hide()
 end)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Activate Raid Dialog: No Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.ActivateRaid.No = {}
 widgets.Dialogs.ActivateRaid.No.Button, widgets.Dialogs.ActivateRaid.No.Text = CreateButton(widgets.Dialogs.ActivateRaid.Frame, "NO", 102, 28, color.DarkGray, color.LightGray)
 widgets.Dialogs.ActivateRaid.No.Button:SetPoint("BOTTOMLEFT", widgets.Dialogs.ActivateRaid.Frame, "BOTTOMLEFT", 45, 10)
@@ -2180,10 +2492,24 @@ widgets.Dialogs.NewRaid.Frame:SetBackdropBorderColor(color.LightGray.r, color.Li
 widgets.Dialogs.NewRaid.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.NewRaid.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- New Raid Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.NewRaid.Header = CreateHeading("NEW RAID", widgets.Dialogs.NewRaid.Frame:GetWidth() - 10, widgets.Dialogs.NewRaid.Frame, 5, -10, true)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- New Raid Dialog: Escape Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.NewRaid.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.NewRaid.Frame, 10, 10, color.White, "BOTTOMLEFT")
+
+-----------------------------------------------------------------------------------------------------------------------
+-- New Raid Dialog: Enter Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.NewRaid.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.NewRaid.Frame, -10, 10, color.White, "BOTTOMRIGHT")
 
+-----------------------------------------------------------------------------------------------------------------------
+-- New Raid Dialog: InputField
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.NewRaid.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.NewRaid.Frame, "InputBoxTemplate")
 widgets.Dialogs.NewRaid.InputField:SetWidth(widgets.Dialogs.NewRaid.Frame:GetWidth() - 30)
 widgets.Dialogs.NewRaid.InputField:SetHeight(30)
@@ -2264,8 +2590,14 @@ widgets.Dialogs.AddPlayers.Frame:SetBackdropBorderColor(color.LightGray.r, color
 widgets.Dialogs.AddPlayers.Frame:SetFrameStrata("DIALOG")
 widgets.Dialogs.AddPlayers.Frame:Hide()
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Header
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.Header = CreateHeading("ADD PLAYERS", widgets.Dialogs.AddPlayers.Frame:GetWidth() - 10, widgets.Dialogs.AddPlayers.Frame, 5, -10, true)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Scroll Area
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.Scroll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.AddPlayers.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
 widgets.Dialogs.AddPlayers.Scroll :SetPoint("TOPLEFT", 6, -30)
 widgets.Dialogs.AddPlayers.Scroll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", -27, 100)
@@ -2277,12 +2609,18 @@ widgets.Dialogs.AddPlayers.Scroll:SetBackdrop({
 widgets.Dialogs.AddPlayers.Scroll:SetBackdropColor(0, 0, 0, 1)
 widgets.Dialogs.AddPlayers.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Scroll View
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.ScrollView = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.Scroll)
 widgets.Dialogs.AddPlayers.ScrollView:SetWidth(widgets.Dialogs.AddPlayers.Scroll:GetWidth())
 widgets.Dialogs.AddPlayers.ScrollView:SetHeight(1)
 
 widgets.Dialogs.AddPlayers.Scroll:SetScrollChild(widgets.Dialogs.AddPlayers.ScrollView)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Add Callback
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.onAdd = function(self)
     local input = widgets.Dialogs.AddPlayers.InputField:GetText()
     if #input > 0 then
@@ -2345,6 +2683,9 @@ widgets.Dialogs.AddPlayers.onAdd = function(self)
     end
 end
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: InputField
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.AddPlayers.Frame, "InputBoxTemplate")
 widgets.Dialogs.AddPlayers.InputField:SetWidth(200)
 widgets.Dialogs.AddPlayers.InputField:SetHeight(40)
@@ -2378,8 +2719,14 @@ widgets.Dialogs.AddPlayers.InputField:SetScript("OnTextChanged", function(self)
 end)
 widgets.Dialogs.AddPlayers.InputField:SetScript("OnEnterPressed", widgets.Dialogs.AddPlayers.onAdd)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Input Label
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.InputLabel = CreateLabel("Enter Player Name:", widgets.Dialogs.AddPlayers.InputField, 0, 10, color.Gold, "TOPLEFT")
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Class Color Options
+-----------------------------------------------------------------------------------------------------------------------
 local classColorOptions = {
     { text = "DEATHKNIGHT", value = "DEATHKNIGHT" },
     { text = "DEMONHUNTER", value = "DEMONHUNTER" },
@@ -2395,6 +2742,10 @@ local classColorOptions = {
     { text = "WARLOCK", value = "WARLOCK" },
     { text = "WARRIOR", value = "WARRIOR" },
 }
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Class Selection
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.ClassSelection = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.InputField, "UIDropDownMenuTemplate")
 widgets.Dialogs.AddPlayers.ClassSelection:SetPoint("LEFT", widgets.Dialogs.AddPlayers.InputField, "RIGHT", -5, -3)
 widgets.Dialogs.AddPlayers.ClassSelection.Class = classColorOptions[1].value
@@ -2415,6 +2766,9 @@ UIDropDownMenu_SetButtonWidth(widgets.Dialogs.AddPlayers.ClassSelection, 124)
 UIDropDownMenu_SetSelectedID(widgets.Dialogs.AddPlayers.ClassSelection, 1)
 UIDropDownMenu_JustifyText(widgets.Dialogs.AddPlayers.ClassSelection, "LEFT")
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Add Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.Add = {}
 widgets.Dialogs.AddPlayers.Add.Button, widgets.Dialogs.AddPlayers.Add.Text = CreateButton(widgets.Dialogs.AddPlayers.Frame, "Add", 102, 28, color.DarkGray, color.LightGray)
 widgets.Dialogs.AddPlayers.Add.Button:SetPoint("LEFT", widgets.Dialogs.AddPlayers.ClassSelection, "RIGHT", -5, 2)
@@ -2428,6 +2782,9 @@ widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnLeave", function(self)
 end)
 widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnClick", widgets.Dialogs.AddPlayers.onAdd)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Players Dialog: Confirm Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.AddPlayers.Confirm = {}
 widgets.Dialogs.AddPlayers.Confirm.Button, widgets.Dialogs.AddPlayers.Confirm.Text = CreateButton(widgets.Dialogs.AddPlayers.Frame, "Confirm", 102, 28, color.DarkGray, color.LightGray)
 widgets.Dialogs.AddPlayers.Confirm.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", -10, 10)
@@ -2542,12 +2899,15 @@ widgets.Dialogs.Roll.Skip.Button:SetScript("OnClick", function(self)
     widgets.Dialogs.Roll.TypeSelection = nil
 
     widgets.Dialogs.Roll.Tier.Button.pushed = false
+    widgets.Dialogs.Roll.Tier.Button:Enable()
     widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Rare.Button.pushed = false
+    widgets.Dialogs.Roll.Rare.Button:Enable()
     widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Normal.Button.pushed = false
+    widgets.Dialogs.Roll.Normal.Button:Enable()
     widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
@@ -2577,6 +2937,7 @@ widgets.Dialogs.Roll.Skip.Button:SetScript("OnClick", function(self)
 
     HandleLootAssignment()
 end)
+
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Roll Dialog Header
 -----------------------------------------------------------------------------------------------------------------------
@@ -2725,12 +3086,18 @@ widgets.Dialogs.Roll.ItemIcon:SetBackdrop({
 widgets.Dialogs.Roll.ItemIcon:SetBackdropColor(0, 0, 0, 1)
 widgets.Dialogs.Roll.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Roll Dialog Item Texture
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.ItemTexture = widgets.Dialogs.Roll.ItemIcon:CreateTexture(nil, "ARTWORK")
 widgets.Dialogs.Roll.ItemTexture:SetAllPoints()
 widgets.Dialogs.Roll.ActiveItemLink = nil
 local itemTexture = select(10, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
 widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Roll Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Roll = {}
 widgets.Dialogs.Roll.Roll.Button, widgets.Dialogs.Roll.Roll.Text = CreateButton(widgets.Dialogs.Roll.Frame, "START ROLL", 125, 40, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Roll.Roll.Button:SetPoint("LEFT", widgets.Dialogs.Roll.ItemIcon, "RIGHT", 20, 0)
@@ -2768,6 +3135,10 @@ widgets.Dialogs.Roll.Roll.Button:SetScript("OnClick", function(self)
         widgets.Dialogs.Roll.Roll.Text:SetText("STOP ROLL")
     end
 end)
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Roll CHAT_MSG_SYSTEM Handling
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Frame:RegisterEvent("CHAT_MSG_SYSTEM")
 widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
     if event ~= "CHAT_MSG_SYSTEM" or message == nil or not widgets.Dialogs.Roll.Roll.Button.rollActive then
@@ -3084,6 +3455,9 @@ widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
     end
 end)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Tier Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Tier = {}
 widgets.Dialogs.Roll.Tier.Button, widgets.Dialogs.Roll.Tier.Text = CreateButton(widgets.Dialogs.Roll.Frame, "TIER", 102, 25, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Roll.Tier.Button:SetPoint("TOP", 0, -120)
@@ -3103,10 +3477,13 @@ end)
 widgets.Dialogs.Roll.Tier.Button:SetScript("OnClick", function(self)
     if not self.pushed then
         self.pushed = true
+        self:Disable()
         widgets.Dialogs.Roll.TypeSelection = "Tier"
         self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
         widgets.Dialogs.Roll.Rare.Button.pushed = false
+        widgets.Dialogs.Roll.Rare.Button:Enable()
         widgets.Dialogs.Roll.Normal.Button.pushed = false
+        widgets.Dialogs.Roll.Normal.Button:Enable()
         widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
         widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
@@ -3193,6 +3570,9 @@ widgets.Dialogs.Roll.Tier.Button:SetScript("OnClick", function(self)
     end
 end)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Rare Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Rare = {}
 widgets.Dialogs.Roll.Rare.Button, widgets.Dialogs.Roll.Rare.Text = CreateButton(widgets.Dialogs.Roll.Frame, "RARE", 102, 25, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Roll.Rare.Button:SetPoint("RIGHT", widgets.Dialogs.Roll.Tier.Button, "LEFT", -14, 0)
@@ -3212,10 +3592,13 @@ end)
 widgets.Dialogs.Roll.Rare.Button:SetScript("OnClick", function(self)
     if not self.pushed then
         self.pushed = true
+        self:Disable()
         widgets.Dialogs.Roll.TypeSelection = "Rare"
         self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
         widgets.Dialogs.Roll.Tier.Button.pushed = false 
+        widgets.Dialogs.Roll.Tier.Button:Enable()
         widgets.Dialogs.Roll.Normal.Button.pushed = false 
+        widgets.Dialogs.Roll.Normal.Button:Enable()
         widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
         widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
@@ -3302,6 +3685,9 @@ widgets.Dialogs.Roll.Rare.Button:SetScript("OnClick", function(self)
     end
 end)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Normal Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Normal = {}
 widgets.Dialogs.Roll.Normal.Button, widgets.Dialogs.Roll.Normal.Text = CreateButton(widgets.Dialogs.Roll.Frame, "NORMAL", 102, 25, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Roll.Normal.Button:SetPoint("LEFT", widgets.Dialogs.Roll.Tier.Button, "RIGHT", 14, 0)
@@ -3321,10 +3707,13 @@ end)
 widgets.Dialogs.Roll.Normal.Button:SetScript("OnClick", function(self)
     if not self.pushed then
         self.pushed = true
+        self:Disable()
         widgets.Dialogs.Roll.TypeSelection = "Normal"
         self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
         widgets.Dialogs.Roll.Tier.Button.pushed = false
+        widgets.Dialogs.Roll.Tier.Button:Enable()
         widgets.Dialogs.Roll.Rare.Button.pushed = false
+        widgets.Dialogs.Roll.Rare.Button:Enable()
         widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
         widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
@@ -3411,6 +3800,9 @@ widgets.Dialogs.Roll.Normal.Button:SetScript("OnClick", function(self)
     end
 end)
 
+-----------------------------------------------------------------------------------------------------------------------
+-- Roll Dialog: Assign Button
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Dialogs.Roll.Assign = {}
 widgets.Dialogs.Roll.Assign.Button, widgets.Dialogs.Roll.Assign.Text = CreateButton(widgets.Dialogs.Roll.Frame, "ASSIGN", 125, 40, color.DarkGray, color.LightGray, color.Gold)
 widgets.Dialogs.Roll.Assign.Button:SetPoint("LEFT", widgets.Dialogs.Roll.Roll.Button, "RIGHT", 20, 0)
@@ -3535,12 +3927,15 @@ widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
     widgets.Dialogs.Roll.TypeSelection = nil
 
     widgets.Dialogs.Roll.Tier.Button.pushed = false
+    widgets.Dialogs.Roll.Tier.Button:Enable()
     widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Rare.Button.pushed = false
+    widgets.Dialogs.Roll.Rare.Button:Enable()
     widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Normal.Button.pushed = false
+    widgets.Dialogs.Roll.Normal.Button:Enable()
     widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
     widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
@@ -3749,6 +4144,17 @@ widgets.Options.Button:SetScript("OnLeave", function(self)
     local c = color.LightGray
     self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
 end)
+widgets.Options.Button:SetScript("OnClick", function(self)
+    if IsDialogShown() then
+        return
+    end
+    widgets.Dialogs.Options.Frame:ClearAllPoints()
+    widgets.Dialogs.Options.Frame:SetPoint("CENTER", widgets.Addon, "CENTER", 0, 0)
+    widgets.Dialogs.Options.TierIdInputField:SetText(ArrayToString(addonDB.Options.TierItems))
+    widgets.Dialogs.Options.RareIdInputField:SetText(ArrayToString(addonDB.Options.RareItems))
+    widgets.Dialogs.Options.Frame:Show()
+end)
+
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Register Addon Events
@@ -3759,21 +4165,31 @@ widgets.Addon:RegisterEvent("PLAYER_LOGIN")
 widgets.Addon:RegisterEvent("BOSS_KILL")
 widgets.Addon:RegisterEvent("START_LOOT_ROLL")
 widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Callback for Event Handling
+-----------------------------------------------------------------------------------------------------------------------
 widgets.Addon:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == addonName then
         local savedVariable = RaidTablesDB or {}
-        for k, v in pairs(savedVariable) do
-            table.insert(addonDB.Config, v)
-            SetupNewEntry(v, k == 1)
+        if savedVariable.Config then
+            for k, v in pairs(savedVariable.Config) do
+                table.insert(addonDB.Config, v)
+                SetupNewEntry(v, k == 1)
+            end
         end
+        addonDB.Options = {}
+        addonDB.Options.TierItems = (savedVariable.Options and savedVariable.Options.TierItems) or TierItems
+        addonDB.Options.RareItems = (savedVariable.Options and savedVariable.Options.RareItems) or RareItems
     elseif event == "PLAYER_LOGIN" then
-        print("Active: " .. ((addonDB.Tracking.Active and "ACTIVE") or "NOT ACTIVE"))
         if IsInInstance("raid") and not addonDB.Tracking.Active and not widgets.Dialogs.ActivateRaid.Frame:IsShown() then
             widgets.Dialogs.ActivateRaid.SetupSelection()
             widgets.Dialogs.ActivateRaid.Frame:Show()
         end
     elseif event == "PLAYER_LOGOUT" then
-        RaidTablesDB = addonDB.Config
+        RaidTablesDB = {}
+        RaidTablesDB.Config = addonDB.Config
+        RaidTablesDB.Options = addonDB.Options
     elseif event == "RAID_INSTANCE_WELCOME" then
         if not addonDB.Tracking.Active and not widgets.Dialogs.ActivateRaid.Frame:IsShown() then
             widgets.Dialogs.ActivateRaid.SetupSelection()
@@ -3832,7 +4248,7 @@ local function SlashCommandHandler(msg)
         print("Free Player List Items = "..#widgets.Dialogs.AddPlayers.FreePlayerFrames)
     elseif msg == "roll test" then
         addonDB.Testing = true
-        local item = select(2, GetItemInfo("|cffa335ee|Hitem:183011::::::::60:577::5:4:7188:6652:1485:6646:1:28:752:::|h[Glaive of the Fallen]|h|r"))
+        local item = select(2, GetItemInfo("|cffa335ee|Hitem:196590::::::::60:577::6:4:7188:6652:1485:6646:1:28:752:::|h[Dreadful Topaz Forgestone]|h|r"))
         table.insert(widgets.Dialogs.Roll.Items, item)
         item = select(2, GetItemInfo("|cffa335ee|Hitem:19019::::::::120:265::5::::|h[Thunderfury, Blessed Blade of the Windseeker]|h|r"))
         table.insert(widgets.Dialogs.Roll.Items, item)
