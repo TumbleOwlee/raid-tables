@@ -7,64 +7,112 @@ local author = "Owleé-Blackmoore"
 -----------------------------------------------------------------------------------------------------------------------
 -- Setup Tables And Variables for Easy Access
 -----------------------------------------------------------------------------------------------------------------------
-local addonDB = {}
-addonDB.Widgets = {}
-addonDB.Config = {}
-addonDB.Widgets.Setups = {}
-addonDB.Widgets.FreeSetups = {}
-addonDB.Widgets.FreePlayers = {}
-addonDB.Widgets.Dialogs = {}
-addonDB.Options = {}
-addonDB.Options.TierItems = {}
-addonDB.Options.RareItems = {}
-local widgets = addonDB.Widgets
-local configs = addonDB.Config
-local setups = widgets.Setups
-
-addonDB.Tracking = {}
-addonDB.Tracking.Active = false
-addonDB.Tracking.Name = nil
-addonDB.Testing = true
+local addonDB = {
+    Widgets = {
+        Setups = {},
+        FreeSetups = {},
+        FreePlayers = {},
+        Dialogs = {},
+    },
+    Configs = {},
+    Options = {
+        TierItems = {},
+        RareItems = {},
+    },
+    Tracking = {
+        Active = false,
+        Name = nil,
+    },
+    Testing = true,
+    Sharing = false,
+    Scaling = 1.0
+}
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Rare Items
 -----------------------------------------------------------------------------------------------------------------------
 local RareItems = {
-    195480,
-    194301,
-    195526,
-    195527,
+    195480, 194301, 195526, 195527,
 }
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Tier Items
 -----------------------------------------------------------------------------------------------------------------------
 local TierItems = {
-    196488,
-    196598,
-    196603,
-    196593,
-
-    196587,
-    196597,
-    196602,
-    196592,
-
-    196586,
-    196596,
-    196601,
-    196591,
-
-    196589,
-    196599,
-    196604,
-    196594,
-
-    196590,
-    196600,
-    196605,
-    196595,
+    196488, 196598, 196603, 196593,
+    196587, 196597, 196602, 196592,
+    196586, 196596, 196601, 196591,
+    196589, 196599, 196604, 196594,
+    196590, 196600, 196605, 196595,
 }
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Scale agnostic Width
+-----------------------------------------------------------------------------------------------------------------------
+local function GetWidth(frame)
+    return frame:GetWidth() / addonDB.Scaling
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Scale Agnostic Height
+-----------------------------------------------------------------------------------------------------------------------
+local function GetHeight(frame)
+    return frame:GetHeight() / addonDB.Scaling
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Agnostic
+-----------------------------------------------------------------------------------------------------------------------
+local function Agnostic(num)
+    if not num then
+        return nil
+    end
+    return num / addonDB.Scaling
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Apply Scale
+-----------------------------------------------------------------------------------------------------------------------
+local function Scaled(num)
+    if not num then
+        return nil
+    end
+    return num * addonDB.Scaling
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Set Scale agnostic Width
+-----------------------------------------------------------------------------------------------------------------------
+local function SetWidth(frame, width)
+    frame:SetWidth(Scaled(width))
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Set Scale agnostic Height 
+-----------------------------------------------------------------------------------------------------------------------
+local function SetHeight(frame, height)
+    frame:SetHeight(Scaled(height))
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Set Scale agnostic Size 
+-----------------------------------------------------------------------------------------------------------------------
+local function SetSize(frame, width, height)
+    frame:SetSize(Scaled(width), Scaled(height))
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Set Scale agnostic Position 
+-----------------------------------------------------------------------------------------------------------------------
+local function SetPoint(frame, point, relativeTo, relativePoint, offsetX, offsetY)
+    if relativeTo == nil and relativePoint == nil and offsetX == nil and offsetY == nil then
+        frame:SetPoint(point)
+    elseif offsetX == nil and offsetY == nil then
+        frame:SetPoint(point, Scaled(relativeTo), Scaled(relativePoint))
+    else
+        frame:SetPoint(point, relativeTo, relativePoint, Scaled(offsetX), Scaled(offsetY))
+    end
+end
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Whitespace String
@@ -223,10 +271,200 @@ local orderConfigs = {
 }
 
 -----------------------------------------------------------------------------------------------------------------------
+-- Get Active Configuration
+-----------------------------------------------------------------------------------------------------------------------
+local function GetActiveConfig() 
+    for _, v in pairs(addonDB.Widgets.Setups) do
+        if v.Tab.Button.pushed then
+            for _, c in pairs(addonDB.Configs) do
+                if c.Name == v.Name then
+                    return c
+                end
+            end
+            break
+        end
+    end
+    return nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Setup By Name
+-----------------------------------------------------------------------------------------------------------------------
+local function GetSetupByName(name) 
+    for k, v in pairs(addonDB.Widgets.Setups) do
+        if v.Name == name then
+            return k, v
+        end
+    end
+    return nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Config By Name
+-----------------------------------------------------------------------------------------------------------------------
+local function GetConfigByName(name) 
+    for k, v in pairs(addonDB.Configs) do
+        if v.Name == name then
+            return k, v
+        end
+    end
+    return nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Active Setup
+-----------------------------------------------------------------------------------------------------------------------
+local function GetActiveSetup() 
+    for _, v in pairs(addonDB.Widgets.Setups) do
+        if v.Tab.Button.pushed then
+            return v
+        end
+    end
+    return nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get First Element of Array
+-----------------------------------------------------------------------------------------------------------------------
+local function GetFirstValue(table)
+    for key, value in pairs(table) do
+        return key, value
+    end
+    return nil, nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Remove First Element
+-----------------------------------------------------------------------------------------------------------------------
+local function RemoveFirstElement(t)
+    for key, value in pairs(t) do
+        table.remove(t, key)
+        return value
+    end
+    return nil
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Toggle Frame
+-----------------------------------------------------------------------------------------------------------------------
+local function ToggleFrame(frame)
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        frame:Show()
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Hide Frame
+-----------------------------------------------------------------------------------------------------------------------
+local function HideFrame(frame)
+    if frame:IsShown() then
+        frame:Hide()
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Show Frame
+-----------------------------------------------------------------------------------------------------------------------
+local function ShowFrame(frame)
+    if not frame:IsShown() then
+        frame:Show()
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get All By Filter
+-----------------------------------------------------------------------------------------------------------------------
+local function GetAllWithFilter(t, filter)
+    local collection = {}
+    for k, v in pairs(t) do
+        if filter(k, v) then
+            collection[k] = v
+        end
+    end
+    return collection
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Get Value By Filter
+-----------------------------------------------------------------------------------------------------------------------
+local function GetValueByFilter(t, filter)
+    for k, v in pairs(t) do
+        if filter(k, v) then
+            return k, v
+        end
+    end
+    return nil, nil 
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Add Hover Effect To Button
+-----------------------------------------------------------------------------------------------------------------------
+local function AddHover(button, withPushed)
+    button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    if withPushed then
+        button:SetScript("OnLeave", function(self)
+            if self.pushed then
+                local c = color.Gold
+                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            else
+                local c = color.LightGray
+                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            end
+        end)
+    else
+        button:SetScript("OnLeave", function(self)
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end)
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Apply to each Value
+-----------------------------------------------------------------------------------------------------------------------
+local function ApplyToEach(t, lambda, ...)
+    for k, v in pairs(t) do
+        lambda(k, v, ...)
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Rearrange Frames with Offsets
+-----------------------------------------------------------------------------------------------------------------------
+local function RearrangeFrames(t, anchor, xOffset, yOffset, getFrame, startX, startY)
+    local x, y = startX or 0, startY or 0
+    for k, v in pairs(t) do
+        local frame = getFrame(v)
+        frame:ClearAllPoints()
+        SetPoint(frame, anchor, x, y)
+        x = x + xOffset
+        y = y + yOffset
+    end
+    return x, y
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Remove Values that fulfill the filter requirement
+-----------------------------------------------------------------------------------------------------------------------
+local function RemoveWithFilter(t, filter)
+    for k, v in pairs(t) do
+        if filter(k, v) then
+            table.remove(t, k)
+            return
+        end
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
 -- Check if Dialog is Shown
 -----------------------------------------------------------------------------------------------------------------------
 local function IsDialogShown()
-    for k, v in pairs(widgets.Dialogs) do
+    for k, v in pairs(addonDB.Widgets.Dialogs) do
         if v.Frame:IsShown() then
             return true
         end
@@ -250,7 +488,7 @@ end
 -- Check if Roll is Shown
 -----------------------------------------------------------------------------------------------------------------------
 local function IsRollShown()
-    return widgets.Dialogs.Roll.Frame:IsShown()
+    return addonDB.Widgets.Dialogs.Roll.Frame:IsShown()
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -304,6 +542,79 @@ local function ArrayToString(array)
 end
 
 -----------------------------------------------------------------------------------------------------------------------
+-- Serialize Configuration
+-----------------------------------------------------------------------------------------------------------------------
+local function SerializeConfig(config)
+    local serialized = LibSerialize:SerializeEx({errorOnUnserializableType = false}, config)
+    local compressed = LibDeflate:CompressDeflate(serialized)
+    local encoded = LibDeflate:EncodeForPrint(compressed)
+    return encoded
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Deserialize Configuration
+-----------------------------------------------------------------------------------------------------------------------
+local function DeserializeConfig(encoded)
+    local compressed = LibDeflate:DecodeForPrint(encoded)
+    local serialized = LibDeflate:DecompressDeflate(compressed)
+    local success, deserialized = LibSerialize:Deserialize(serialized)
+    return success, deserialized 
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Share Configuration
+-----------------------------------------------------------------------------------------------------------------------
+local function ShareConfiguration(config) 
+    if addonDB.Sharing and addonDB.Tracking.Active and config.Name == addonDB.Tracking.Name then
+        local written = 1
+        local encoded = SerializeConfig(config)
+        addonDB.Identifier = addonDB.Identifier or 0
+        local id = addonDB.Identifier
+        addonDB.Identifier = addonDB.Identifier + 1
+        while written < #encoded do
+            local endIndex = math.min(written + 150, #encoded)
+            local substr = string.sub(encoded, written, endIndex)
+
+            local success = C_ChatInfo.SendAddonMessage("RaidTablesShare", id.."$|$"..written.."$|$"..endIndex.."$|$"..#encoded.."$|$"..substr, (IsInRaid() and "RAID") or (IsInGroup() and "PARTY") or "WHISPER", UnitName("player"))
+            if not success then
+                print("[ERROR] RaidTables: Sharing failed!")
+                break
+            end
+
+            written = endIndex + 1
+        end
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Disable Tracking
+-----------------------------------------------------------------------------------------------------------------------
+local function DisableTracking()
+    addonDB.Tracking.Name = nil
+    addonDB.Tracking.Active = false
+
+    addonDB.Widgets.Share.Frame:Hide()
+    addonDB.Widgets.Share.Checkbox:SetChecked(false)
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Enable Tacking
+-----------------------------------------------------------------------------------------------------------------------
+local function EnableTracking(name, share)
+    addonDB.Tracking.Name = name 
+    addonDB.Tracking.Active = true
+
+    addonDB.Widgets.Share.Checkbox:SetChecked(share)
+
+    local setup = GetActiveSetup()
+    if setup and setup.Name == name then
+        addonDB.Widgets.Share.Frame:Show()
+    end
+
+    ShareConfiguration(select(2, GetConfigByName(name)))
+end
+
+-----------------------------------------------------------------------------------------------------------------------
 -- Get a List of All Unregistered Units
 -----------------------------------------------------------------------------------------------------------------------
 local function GetUnregisteredPlayers(setup)
@@ -350,14 +661,14 @@ local function CreateButton(parent, label, width, height, colorBackground, color
     button:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+        edgeSize = math.max(1, Scaled(2)),
     })
     button:SetBackdropColor(colorBackground.r, colorBackground.g, colorBackground.b, colorBackground.a)
     button:SetBackdropBorderColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a)
 
     local buttonText = button:CreateFontString(nil, "ARTWORK")
-    buttonText:SetPoint("CENTER")
-    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 12, "BOLD")
+    SetPoint(buttonText, "CENTER")
+    buttonText:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "BOLD")
     if textColor then
         buttonText:SetTextColor(textColor.r, textColor.g, textColor.b)
     else
@@ -365,7 +676,7 @@ local function CreateButton(parent, label, width, height, colorBackground, color
     end
     buttonText:SetText(label)
 
-    button:SetSize(width, height)
+    SetSize(button, width, height)
     button:SetFontString(buttonText)
 
     return button, buttonText 
@@ -378,9 +689,9 @@ local function CreateLine(width, parent, x, y, colour)
     local line = parent:CreateTexture(nil, "ARTWORK")
     local c = colour or color.Gold
     line:SetColorTexture(c.r, c.g, c.b) -- set the color of the line to white
-    line:SetHeight(1) -- set the height of the line
-    line:SetWidth(width)
-    line:SetPoint("TOPLEFT", x, y)
+    SetHeight(line, 1) -- set the height of the line
+    SetWidth(line, width)
+    SetPoint(line, "TOPLEFT", x, y)
     return line
 end
 
@@ -390,11 +701,11 @@ end
 local function CreateLabel(label, parent, x, y, colour, anchor, fontSize)
     local c = colour or color.Gold
     local labelString = parent:CreateFontString(nil, "ARTWORK")
-    labelString:SetFont("Fonts\\FRIZQT__.TTF", fontSize or 12, "NONE")
+    labelString:SetFont("Fonts\\FRIZQT__.TTF", Scaled(fontSize or 12), "NONE")
     labelString:SetTextColor(c.r, c.g, c.b)
     labelString:SetText(label)
     if x ~= nil and y ~= nil then
-        labelString:SetPoint(anchor or "TOPLEFT", x, y)
+        SetPoint(labelString, anchor or "TOPLEFT", x, y)
     end
     return labelString
 end
@@ -404,11 +715,11 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 local function CreateHeading(label, width, parent, x, y, noLine, fontSize)
     local labelString = CreateLabel(label, parent, x, y, color.Gold, nil, fontSize)
-    local labelWidth = labelString:GetWidth()
+    local labelWidth = GetWidth(labelString)
     local lineWidth = (width - labelWidth - 10) * 0.5
     local yOffset = ((fontSize or 12) - 12) / 2
 
-    labelString:SetPoint("TOPLEFT", x + lineWidth + 5, y)
+    SetPoint(labelString, "TOPLEFT", x + lineWidth + 5, y)
 
     if not noLine then
         local leftLine = CreateLine(lineWidth, parent, x, y - 5 - yOffset, color.White)
@@ -422,185 +733,225 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Heading
 -----------------------------------------------------------------------------------------------------------------------
-function HandleLootAssignment() 
-    -- If summary is active, wait until closed
-    if widgets.Summary.Frame:IsShown() then
+local function HandleLootAssignment() 
+    -------------------------------------------------------------------------------------------------------------------
+    -- Dont show new Loot Assignment if Summary is opened
+    -------------------------------------------------------------------------------------------------------------------
+    if addonDB.Widgets.Summary.Frame:IsShown() then
         return
     end
-    -- If items are ready to be rolled
-    if #widgets.Dialogs.Roll.Items > 0 then
-        -- If items is actively rolled on, roll dialog is shown, skip for now
-        if widgets.Dialogs.Roll.ActiveItemLink then
+    -------------------------------------------------------------------------------------------------------------------
+    -- Next Item to be rolled on exists
+    -------------------------------------------------------------------------------------------------------------------
+    if #addonDB.Widgets.Dialogs.Roll.Items > 0 then
+        ---------------------------------------------------------------------------------------------------------------
+        -- The previous Item isn't finished
+        ---------------------------------------------------------------------------------------------------------------
+        if addonDB.Widgets.Dialogs.Roll.ActiveItemLink then
             return
         end
-        for k, v in pairs(widgets.Dialogs.Roll.Items) do
-            -- Update Item Icon
-            widgets.Dialogs.Roll.ActiveItemLink = v
-            local itemTexture = select(10, GetItemInfo(widgets.Dialogs.Roll.ActiveItemLink))
-            local itemId = GetIdFromLink(widgets.Dialogs.Roll.ActiveItemLink)
 
-            if IsInArray(addonDB.Options.TierItems, itemId) then
-                widgets.Dialogs.Roll.Tier.Button.pushed = true
-                widgets.Dialogs.Roll.Tier.Button:Disable()
-                widgets.Dialogs.Roll.TypeSelection = "Tier"
-                widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-            elseif IsInArray(addonDB.Options.RareItems, itemId) then
-                widgets.Dialogs.Roll.Rare.Button.pushed = true
-                widgets.Dialogs.Roll.Rare.Button:Disable()
-                widgets.Dialogs.Roll.TypeSelection = "Rare"
-                widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-            else
-                widgets.Dialogs.Roll.Normal.Button.pushed = true
-                widgets.Dialogs.Roll.Normal.Button:Disable()
-                widgets.Dialogs.Roll.TypeSelection = "Normal"
-                widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update the Item Icon
+        ---------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Dialogs.Roll.ActiveItemLink = RemoveFirstElement(addonDB.Widgets.Dialogs.Roll.Items)
+        local itemTexture = select(10, GetItemInfo(addonDB.Widgets.Dialogs.Roll.ActiveItemLink))
+        local itemId = GetIdFromLink(addonDB.Widgets.Dialogs.Roll.ActiveItemLink)
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Check if Item is Tier, Rare or Normal
+        ---------------------------------------------------------------------------------------------------------------
+        if IsInArray(addonDB.Options.TierItems, itemId) then
+            addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed = true
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Tier"
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+        elseif IsInArray(addonDB.Options.RareItems, itemId) then
+            addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed = true
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Rare"
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+        else
+            addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed = true
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Normal"
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update GameTooltip for Item
+        ---------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
+        addonDB.Widgets.Dialogs.Roll.ItemIcon:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink(addonDB.Widgets.Dialogs.Roll.ActiveItemLink)
+            GameTooltip:Show()
+        end)
+        addonDB.Widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Show Addon Table and Roll Frame
+        ---------------------------------------------------------------------------------------------------------------
+        ShowFrame(addonDB.Widgets.Addon)
+        ShowFrame(addonDB.Widgets.Dialogs.Roll.Frame)
+    else
+        ---------------------------------------------------------------------------------------------------------------
+        -- No Item to roll an exists, so hide Roll Frame
+        ---------------------------------------------------------------------------------------------------------------
+        HideFrame(addonDB.Widgets.Dialogs.Roll.Frame)
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- No item was assigned to player, so no summary window necessary
+        ---------------------------------------------------------------------------------------------------------------
+        if #addonDB.Widgets.Dialogs.Roll.AssignmentList == 0 then
+            return
+        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- For each Assignment create List Item in Summary View
+        ---------------------------------------------------------------------------------------------------------------
+        local yOffset = -30
+        for _, assignment in pairs(addonDB.Widgets.Dialogs.Roll.AssignmentList) do
+            -----------------------------------------------------------------------------------------------------------
+            -- Check if we can reuse a previous freed frame
+            -----------------------------------------------------------------------------------------------------------
+            local item = RemoveFirstElement(addonDB.Widgets.Summary.FreeItems)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Create New Frame if necessary
+            -----------------------------------------------------------------------------------------------------------
+            if not item then
+                item = {}
+                -- Setup frame
+                item.Frame = CreateFrame("Frame", nil, addonDB.Widgets.Summary.Frame, "BackdropTemplate")
+                SetSize(item.Frame, GetWidth(addonDB.Widgets.Summary.Frame) - 20, 84)
+                item.Frame:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeSize = math.max(1, Scaled(2)),
+                })
+                item.Frame:SetBackdropColor(0, 0, 0, 1)
+                item.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+                -- Setup item icon
+                item.ItemIcon = CreateFrame("Frame", nil, item.Frame, "BackdropTemplate")
+                SetSize(item.ItemIcon, 64, 64)
+                SetPoint(item.ItemIcon, "TOPLEFT", 40, -10)
+                item.ItemIcon:SetBackdrop({
+                    bgFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeSize = math.max(1, Scaled(2)),
+                })
+                item.ItemIcon:SetBackdropColor(0, 0, 0, 1)
+                item.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+                item.ItemTexture = item.ItemIcon:CreateTexture(nil, "ARTWORK")
+                item.ItemTexture:SetAllPoints()
+
+                -- Setup Player Label
+                item.PlayerLabel = CreateLabel("", item.Frame, 150, 0, color.Gold, "LEFT", 14)
+
+                -- Insert
+                table.insert(addonDB.Widgets.Summary.Items, item)
             end
 
-            widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
-            widgets.Dialogs.Roll.ItemIcon:SetScript("OnEnter", function(self)
+            -----------------------------------------------------------------------------------------------------------
+            -- Show Item Frame
+            -----------------------------------------------------------------------------------------------------------
+            ShowFrame(item.Frame)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Update GameTooltip for Item Icon
+            -----------------------------------------------------------------------------------------------------------
+            local itemTexture = select(10, GetItemInfo(assignment.ItemLink))
+            item.ItemTexture:SetTexture(itemTexture)
+            item.ItemIcon:SetScript("OnEnter", function(self)
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink(widgets.Dialogs.Roll.ActiveItemLink)
+                GameTooltip:SetHyperlink(assignment.ItemLink)
                 GameTooltip:Show()
             end)
-            widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
+            addonDB.Widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
                 GameTooltip:Hide()
             end)
-            table.remove(widgets.Dialogs.Roll.Items, k)
 
-            -- Show Roll Frame
-            if not widgets.Addon:IsShown() then
-                widgets.Addon:Show()
-            end
-            if not widgets.Dialogs.Roll.Frame:IsShown() then
-                widgets.Dialogs.Roll.Frame:Show()
-            end
-            break
+            -----------------------------------------------------------------------------------------------------------
+            -- Update Player Label
+            -----------------------------------------------------------------------------------------------------------
+            item.PlayerLabel:SetText(assignment.PlayerName)
+            local c = classColor[assignment.Class]
+            item.PlayerLabel:SetTextColor(c.r, c.g, c.b, c.a)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Update Position in Summary Frame
+            -----------------------------------------------------------------------------------------------------------
+            SetPoint(item.Frame, "TOPLEFT", 10, yOffset)
+            yOffset = yOffset - 86
         end
-    else
-        if widgets.Dialogs.Roll.Frame:IsShown() then
-            widgets.Dialogs.Roll.Frame:Hide()
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Height to have Space for Close Button (We dont use Scroll view because of 6 items at most)
+        ---------------------------------------------------------------------------------------------------------------
+        SetHeight(addonDB.Widgets.Summary.Frame, -yOffset + 50)
+        
+        ---------------------------------------------------------------------------------------------------------------
+        -- If Addon Frame is shown, move Summary frame to the right of it, else in the center
+        ---------------------------------------------------------------------------------------------------------------
+        if addonDB.Widgets.Addon:IsShown() then
+            addonDB.Widgets.Summary.Frame:ClearAllPoints()
+            SetPoint(addonDB.Widgets.Summary.Frame, "TOPLEFT", addonDB.Widgets.Addon, "TOPRIGHT", 10, 0)
+        else
+            addonDB.Widgets.Summary.Frame:ClearAllPoints()
+            SetPoint(addonDB.Widgets.Summary.Frame, "CENTER", 0, 0)
         end
-        if #widgets.Dialogs.Roll.AssignmentList > 0 then
-            local yOffset = -30
-            for _, assignment in pairs(widgets.Dialogs.Roll.AssignmentList) do
-                local item = nil
-                -- Setup items in summary view
-                if #widgets.Summary.FreeItems > 0 then
-                    for k, v in pairs(widgets.Summary.FreeItems) do
-                        item = v
-                        table.remove(widgets.Summary.FreeItems, k)
-                        break
-                    end
-                else
-                    item = {}
 
-                    -- Setup frame
-                    item.Frame = CreateFrame("Frame", nil, widgets.Summary.Frame, "BackdropTemplate")
-                    item.Frame:SetSize(widgets.Summary.Frame:GetWidth() - 20, 84)
-                    item.Frame:SetBackdrop({
-                        bgFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeSize = 2,
-                    })
-                    item.Frame:SetBackdropColor(0, 0, 0, 1)
-                    item.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-                    -- Setup item icon
-                    item.ItemIcon = CreateFrame("Frame", nil, item.Frame, "BackdropTemplate")
-                    item.ItemIcon:SetSize(64, 64)
-                    item.ItemIcon:SetPoint("TOPLEFT", 40, -10)
-                    item.ItemIcon:SetBackdrop({
-                        bgFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeSize = 2,
-                    })
-                    item.ItemIcon:SetBackdropColor(0, 0, 0, 1)
-                    item.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-                    item.ItemTexture = item.ItemIcon:CreateTexture(nil, "ARTWORK")
-                    item.ItemTexture:SetAllPoints()
-
-                    -- Setup Player Label
-                    item.PlayerLabel = CreateLabel("", item.Frame, 150, 0, color.Gold, "LEFT", 14)
-
-                    -- Insert
-                    table.insert(widgets.Summary.Items, item)
-                end
-
-                -- Update frame
-                item.Frame:Show()
-
-                -- Update icon
-                local itemTexture = select(10, GetItemInfo(assignment.ItemLink))
-                item.ItemTexture:SetTexture(itemTexture)
-                item.ItemIcon:SetScript("OnEnter", function(self)
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                    GameTooltip:SetHyperlink(assignment.ItemLink)
-                    GameTooltip:Show()
-                end)
-                widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
-                    GameTooltip:Hide()
-                end)
-
-                -- Update Player Label
-                item.PlayerLabel:SetText(assignment.PlayerName)
-                local c = classColor[assignment.Class]
-                item.PlayerLabel:SetTextColor(c.r, c.g, c.b, c.a)
-
-                -- Update position
-                item.Frame:SetPoint("TOPLEFT", 10, yOffset)
-                yOffset = yOffset - 86
-            end
-            widgets.Summary.Frame:SetHeight(-yOffset + 50)
-            
-            if widgets.Addon:IsShown() then
-                widgets.Summary.Frame:ClearAllPoints()
-                widgets.Summary.Frame:SetPoint("TOPLEFT", widgets.Addon, "TOPRIGHT", 10, 0)
-            else
-                widgets.Summary.Frame:ClearAllPoints()
-                widgets.Summary.Frame:SetPoint("CENTER", 0, 0)
-            end
-            widgets.Summary.Frame:Show()
-        end
+        ---------------------------------------------------------------------------------------------------------------
+        -- Show Summary Frame
+        ---------------------------------------------------------------------------------------------------------------
+        ShowFrame(addonDB.Widgets.Summary.Frame)
     end
 end
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Function to Create a Player Row Frame for the Table View
 -----------------------------------------------------------------------------------------------------------------------
-local function CreatePlayerFrame(player, config, setup, widgets, parent, playerInfo, width, x, y)
+local function CreatePlayerFrame(player, config, setup, parent, playerInfo, width, x, y)
     -------------------------------------------------------------------------------------------------------------------
     -- Setup Locals
     -------------------------------------------------------------------------------------------------------------------
     local colorBackground, colorBorder = color.DarkGray, color.LightGray
     local name, colour, rare, tier, normal = playerInfo.Name, classColor[playerInfo.Class], playerInfo.Rare, playerInfo.Tier, playerInfo.Normal
 
-    player.PlayerName = name
-
     -------------------------------------------------------------------------------------------------------------------
-    -- Create Player Container
+    -- Create Player Container (if not reusable)
     -------------------------------------------------------------------------------------------------------------------
     if player.Container == nil then
         player.Container = CreateFrame("Button", nil, parent, "BackdropTemplate")
-        player.Container:SetWidth(width)
-        player.Container:SetHeight(34)
+        SetWidth(player.Container, width)
+        SetHeight(player.Container, 34)
         player.Container:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 2,
+            edgeSize = math.max(1, Scaled(2)),
         })
         player.Container:SetBackdropColor(colorBackground.r, colorBackground.g, colorBackground.b, colorBackground.a)
         player.Container:SetBackdropBorderColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a)
     end
-    player.Container:SetPoint("TOPLEFT", x, y)
 
     -------------------------------------------------------------------------------------------------------------------
-    -- Create Remove Button
+    -- Update Position and Name
+    -------------------------------------------------------------------------------------------------------------------
+    SetPoint(player.Container, "TOPLEFT", x, y)
+    player.PlayerName = name
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Create Remove Button (if not reusable)
     -------------------------------------------------------------------------------------------------------------------
     if player.Remove == nil then
         player.Remove = {}
         player.Remove.Button, player.Remove.Text = CreateButton(player.Container, "X", 30, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.Remove.Button:SetPoint("TOPLEFT", 15, -3)
+        SetPoint(player.Remove.Button, "TOPLEFT", 15, -3)
         player.Remove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -610,33 +961,30 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update OnClick
+    -------------------------------------------------------------------------------------------------------------------
     player.Remove.Button:SetScript("OnClick", function(self)
+        ---------------------------------------------------------------------------------------------------------------
+        -- Skip if Dialog is shown
+        ---------------------------------------------------------------------------------------------------------------
         if IsDialogShown() then
             return
         end
-        for k, v in pairs(setup.Players) do
-            if v == player then
-                v.Container:Hide()
-                -- Remove player from config
-                for idx, p in pairs(config.PlayerInfos) do
-                    if v.PlayerName == p.Name then
-                        table.remove(config.PlayerInfos, idx)
-                        break
-                    end
-                end
-                -- Move entry to storage for later reuse
-                table.insert(widgets.FreePlayers, v)
-                table.remove(setup.Players, k)
-                -- Rearrange frames
-                local vOffset = 0
-                for p, q in pairs(setup.Players) do
-                    q.Container:SetPoint("TOPLEFT", 0, vOffset)
-                    vOffset = vOffset - 32
-                end
-                setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Remove the Player  
+        ---------------------------------------------------------------------------------------------------------------
+        local k, v = GetValueByFilter(setup.Players, function(k, v) return v == player end)
+        RemoveWithFilter(config.PlayerInfos, function(_, p) return p.Name == v.PlayerName end)
+        HideFrame(v.Container)
+        -- Move entry to storage for later reuse
+        table.insert(addonDB.Widgets.FreePlayers, v)
+        table.remove(setup.Players, k)
+        -- Rearrange frames
+        local _, y = RearrangeFrames(setup.Players, "TOPLEFT", 0, -32, function(q) return q.Container end)
+        SetPoint(setup.TableBottomLine, "TOPLEFT", 5, y + 2)
     end)
 
     -------------------------------------------------------------------------------------------------------------------
@@ -673,7 +1021,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.RareAdd == nil then
         player.RareAdd = {}
         player.RareAdd.Button, player.RareAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.RareAdd.Button:SetPoint("TOPLEFT", 560, -3)
+        SetPoint(player.RareAdd.Button, "TOPLEFT", 560, -3)
         player.RareAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -683,10 +1031,18 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update OnClick for Rare Add Button
+    -------------------------------------------------------------------------------------------------------------------
     player.RareAdd.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
         local num = tonumber(player.RareDiffText:GetText()) + 1
         if num > 0 then
             local g = color.Green
@@ -701,39 +1057,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.RareDiffText:SetText(0)
             player.RareDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -743,7 +1093,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.RareRemove == nil then
         player.RareRemove = {}
         player.RareRemove.Button, player.RareRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.RareRemove.Button:SetPoint("TOPLEFT", 620, -3)
+        SetPoint(player.RareRemove.Button, "TOPLEFT", 620, -3)
         player.RareRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -753,15 +1103,19 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update Rare Remove Button
+    -------------------------------------------------------------------------------------------------------------------
     player.RareRemove.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
-        local num = tonumber(player.RareDiffText:GetText()) - 1
-        local n = tonumber(player.RareText:GetText())
-        if n + num < 0 then
-            num = -n
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
+        local num = math.max(tonumber(player.RareDiffText:GetText()) - 1, -tonumber(player.RareText:GetText()))
         if num > 0 then
             local g = color.Green
             player.RareDiffText:SetText("+" .. num)
@@ -775,39 +1129,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.RareDiffText:SetText(0)
             player.RareDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -835,7 +1183,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.TierAdd == nil then
         player.TierAdd = {}
         player.TierAdd.Button, player.TierAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.TierAdd.Button:SetPoint("TOPLEFT", 865, -3)
+        SetPoint(player.TierAdd.Button, "TOPLEFT", 865, -3)
         player.TierAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -845,10 +1193,18 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update OnClick for Tier Add Button
+    -------------------------------------------------------------------------------------------------------------------
     player.TierAdd.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
         local num = tonumber(player.TierDiffText:GetText()) + 1
         if num > 0 then
             local g = color.Green
@@ -863,39 +1219,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.TierDiffText:SetText(0)
             player.TierDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -905,7 +1255,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.TierRemove == nil then
         player.TierRemove = {}
         player.TierRemove.Button, player.TierRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.TierRemove.Button:SetPoint("TOPLEFT", 925, -3)
+        SetPoint(player.TierRemove.Button, "TOPLEFT", 925, -3)
         player.TierRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -915,15 +1265,19 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update Tier Remove Button
+    -------------------------------------------------------------------------------------------------------------------
     player.TierRemove.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
-        local num = tonumber(player.TierDiffText:GetText()) - 1
-        local n = tonumber(player.TierText:GetText())
-        if n + num < 0 then
-            num = -n
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
+        local num = math.max(tonumber(player.TierDiffText:GetText()) - 1, -tonumber(player.TierText:GetText()))
         if num > 0 then
             local g = color.Green
             player.TierDiffText:SetText("+" .. num)
@@ -937,39 +1291,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.TierDiffText:SetText(0)
             player.TierDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -997,7 +1345,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.NormalAdd == nil then
         player.NormalAdd = {}
         player.NormalAdd.Button, player.NormalAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.NormalAdd.Button:SetPoint("TOPLEFT", 1170, -3)
+        SetPoint(player.NormalAdd.Button, "TOPLEFT", 1170, -3)
         player.NormalAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1007,10 +1355,18 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update OnClick for Normal Add Button
+    -------------------------------------------------------------------------------------------------------------------
     player.NormalAdd.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
         local num = tonumber(player.NormalDiffText:GetText()) + 1
         if num > 0 then
             local g = color.Green
@@ -1025,39 +1381,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.NormalDiffText:SetText(0)
             player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -1067,7 +1417,7 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
     if player.NormalRemove == nil then
         player.NormalRemove = {}
         player.NormalRemove.Button, player.NormalRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        player.NormalRemove.Button:SetPoint("TOPLEFT", 1230, -3)
+        SetPoint(player.NormalRemove.Button, "TOPLEFT", 1230, -3)
         player.NormalRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1077,15 +1427,19 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             self:SetBackdropBorderColor(dark.r, dark.g, dark.b, dark.a)
         end)
     end
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Update Normal Remove Button
+    -------------------------------------------------------------------------------------------------------------------
     player.NormalRemove.Button:SetScript("OnClick", function(self)
         if IsDialogShown() then
             return
         end
-        local num = tonumber(player.NormalDiffText:GetText()) - 1
-        local n = tonumber(player.NormalText:GetText())
-        if n + num < 0 then
-            num = -n
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Diff Text
+        ---------------------------------------------------------------------------------------------------------------
+        local num = math.max(tonumber(player.NormalDiffText:GetText()) - 1, -tonumber(player.NormalText:GetText()))
         if num > 0 then
             local g = color.Green
             player.NormalDiffText:SetText("+" .. num)
@@ -1099,39 +1453,33 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
             player.NormalDiffText:SetText(0)
             player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
         end
-        -- Update order if active
-        local activeOrder = nil
-        for name, orderBtn in pairs(setup.Order) do
-            if orderBtn.Button.pushed then
-                for _, order in pairs(orderConfigs) do
-                    if order.Name == name then
-                        activeOrder = order
-                        break
-                    end
-                end
-                break
-            end
-        end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order
+        ---------------------------------------------------------------------------------------------------------------
+        local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
+        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+
         if activeOrder then
-            table.sort(setup.Players, activeOrder["Callback"])
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, activeOrder["Callback"])
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Apply new Order in Configuration
+            -----------------------------------------------------------------------------------------------------------
+            local _, config = GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == setup.Name end)
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
         end
     end)
 
@@ -1142,232 +1490,6 @@ local function CreatePlayerFrame(player, config, setup, widgets, parent, playerI
 end
 
 -----------------------------------------------------------------------------------------------------------------------
--- Create Right Mouse Click Menu Frame
------------------------------------------------------------------------------------------------------------------------
-widgets.RightMouseClickTabMenu = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
-
------------------------------------------------------------------------------------------------------------------------
--- Create Addon Window
------------------------------------------------------------------------------------------------------------------------
-widgets.Addon = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Addon:SetFrameStrata("HIGH")
-widgets.Addon:SetSize(1600, 1000)
-widgets.Addon:SetMovable(true)
-widgets.Addon:EnableMouse(true)
-widgets.Addon:RegisterForDrag("LeftButton")
-widgets.Addon:SetScript("OnDragStart", widgets.Addon.StartMoving)
-widgets.Addon:SetScript("OnDragStop", widgets.Addon.StopMovingOrSizing)
-widgets.Addon:SetPoint("CENTER")
-widgets.Addon:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Addon:SetBackdropColor(0, 0, 0, 1)
-widgets.Addon:SetBackdropBorderColor(0, 0, 0, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Tab Scroll
------------------------------------------------------------------------------------------------------------------------
-widgets.TabScroll = CreateFrame("ScrollFrame", nil, widgets.Addon, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.TabScroll:SetPoint("TOPLEFT", 6, -6)
-widgets.TabScroll:SetPoint("BOTTOMRIGHT", widgets.Addon, "BOTTOMLEFT", 200, 6 + 100)
-widgets.TabScroll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.TabScroll:SetBackdropColor(0, 0, 0, 1)
-widgets.TabScroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Tab Content And Insert Into Tab Scroll
------------------------------------------------------------------------------------------------------------------------
-widgets.TabContent = CreateFrame("Frame", nil, widgets.TabScroll)
-widgets.TabContent:SetWidth(400)
-widgets.TabContent:SetHeight(1)
-widgets.TabScroll:SetScrollChild(widgets.TabContent)
-
------------------------------------------------------------------------------------------------------------------------
--- Create CreatedBy Label
------------------------------------------------------------------------------------------------------------------------
-widgets.CreatedBy = widgets.Addon:CreateFontString(nil, "ARTWORK")
-widgets.CreatedBy:SetPoint("BOTTOMLEFT", 10, 6)
-widgets.CreatedBy:SetFont("Fonts\\FRIZQT__.TTF", 12, "NONE")
-widgets.CreatedBy:SetTextColor(1, 0.8, 0) -- set the color to golden
-widgets.CreatedBy:SetText("Created by " .. author)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Content Frame
------------------------------------------------------------------------------------------------------------------------
-widgets.Content = CreateFrame("Frame", nil, widgets.Addon, "BackdropTemplate")
-widgets.Content:SetPoint("TOPLEFT", 227, -6)
-widgets.Content:SetPoint("BOTTOMRIGHT", -6, 6)
-widgets.Content:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Content:SetBackdropColor(0, 0, 0, 1)
-widgets.Content:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Close Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Close = {}
-widgets.Close.Button, widgets.Close.Text = CreateButton(widgets.Content, "Close", 102, 35, color.DarkGray, color.LightGray)
-widgets.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Content, "BOTTOMRIGHT", -10, 10)
-widgets.Close.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Close.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Close.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-    if widgets.Addon:IsShown() then
-        widgets.Addon:Hide()
-    else
-        widgets.Addon:Show()
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Save Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Save = {}
-widgets.Save.Button, widgets.Save.Text = CreateButton(widgets.Content, "Save", 102, 35, color.DarkGray, color.LightGray)
-widgets.Save.Button:SetPoint("BOTTOMRIGHT", widgets.Content, "BOTTOMRIGHT", -122, 10)
-widgets.Save.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Save.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Save.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-
-    local config = nil
-    local setup = nil
-    for k, v in pairs(widgets.Setups) do 
-        if v.Tab.Button.pushed then
-            setup = v
-            break
-        end
-    end
-    for k, v in pairs(configs) do
-        if setup.Name == v.Name then
-            config = v
-        end
-    end
-
-    for _, player in pairs(setup.Players) do
-        for _, info in pairs(config.PlayerInfos) do
-            if player.PlayerName == info.Name then
-                info.Rare = info.Rare + tonumber(player.RareDiffText:GetText())
-                info.Tier = info.Tier + tonumber(player.TierDiffText:GetText())
-                info.Normal = info.Normal + tonumber(player.NormalDiffText:GetText())
-
-                player.RareText:SetText(info.Rare)
-                player.TierText:SetText(info.Tier)
-                player.NormalText:SetText(info.Normal)
-                player.RareDiffText:SetText(0)
-                player.TierDiffText:SetText(0)
-                player.NormalDiffText:SetText(0)
-                player.RareDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
-                player.TierDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
-                player.NormalDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
-                break
-            end
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Export Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Export = {}
-widgets.Export.Button, widgets.Export.Text = CreateButton(widgets.Content, "Export", 102, 35, color.DarkGray, color.LightGray)
-widgets.Export.Button:SetPoint("BOTTOMLEFT", widgets.Content, "BOTTOMLEFT", 10, 10)
-widgets.Export.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Export.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Export.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-
-    for k, v in pairs(widgets.Setups) do
-        if v.Tab.Button.pushed then
-            for h, c in pairs(configs) do
-                if c.Name == v.Name then
-                    local serialized = LibSerialize:SerializeEx({errorOnUnserializableType = false}, c)
-                    local compressed = LibDeflate:CompressDeflate(serialized)
-                    local encoded = LibDeflate:EncodeForPrint(compressed)
-                    widgets.Dialogs.Export.InputField:SetMaxLetters(0)
-                    widgets.Dialogs.Export.InputField:SetText(encoded)
-                    widgets.Dialogs.Export.Frame:Show()
-                end
-            end
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Print Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Print = {}
-widgets.Print.Button, widgets.Print.Text = CreateButton(widgets.Content, "Print", 102, 35, color.DarkGray, color.LightGray)
-widgets.Print.Button:SetPoint("BOTTOMLEFT", widgets.Export.Button, "BOTTOMRIGHT", 10, 0)
-widgets.Print.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Print.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Print.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-
-    local content =  ""
-    content = content .. "+------------------------------------------+-------+-------+--------+\n" 
-    content = content .. "| Character Name                           | Rares | Tiers | Normal |\n"
-    for k, v in pairs(widgets.Setups) do
-        if v.Tab.Button.pushed then
-            for h, c in pairs(configs) do
-                if c.Name == v.Name then
-                    for _, playerInfo in pairs(c.PlayerInfos) do
-                        local _, count = string.gsub(playerInfo.Name, '[^\128-\193]', '')
-                        content = content .. "+------------------------------------------+-------+-------+--------+\n"
-                        content = content .. "| " .. playerInfo.Name .. Ws(39 - count) .. " | " .. string.format("%5d", playerInfo.Rare)  .. " | " .. string.format("%5d", playerInfo.Tier) .. " | " .. string.format("%6d", playerInfo.Normal) .. " |\n"
-                    end
-                end
-            end
-        end
-    end
-    content = content .. "+------------------------------------------+-------+-------+--------+\n"
-
-    widgets.Dialogs.Print.EditBox:SetText(content)
-    widgets.Dialogs.Print.Frame:Show()
-end)
-
------------------------------------------------------------------------------------------------------------------------
 -- Function to Create a New Raid Content Frame from Configuration
 -----------------------------------------------------------------------------------------------------------------------
 local function SetupNewEntry(cfg, show)
@@ -1375,24 +1497,14 @@ local function SetupNewEntry(cfg, show)
     -- Setup Local
     -------------------------------------------------------------------------------------------------------------------
     local name = cfg.Name
-    local setup = nil
-
     local characterWidth = 350
     local countWidth = 300
 
     -------------------------------------------------------------------------------------------------------------------
     -- Create Content Table or Retrieve Previously Freed Table
     -------------------------------------------------------------------------------------------------------------------
-    if widgets.FreeSetups and #widgets.FreeSetups > 0 then
-        for k, v in pairs(widgets.FreeSetups) do
-            setup = v
-            table.remove(widgets.FreeSetups, k)
-            break
-        end
-    else
-        setup = {}
-    end
-    table.insert(setups, setup)
+    local setup = RemoveFirstElement(addonDB.Widgets.FreeSetups) or {}
+    table.insert(addonDB.Widgets.Setups, setup)
 
     -------------------------------------------------------------------------------------------------------------------
     -- Setup Name
@@ -1403,11 +1515,11 @@ local function SetupNewEntry(cfg, show)
     -- Create Content Container
     -------------------------------------------------------------------------------------------------------------------
     if setup.Content == nil then
-        setup.Content = CreateFrame("Frame", nil, widgets.Content)
-        setup.Content:SetPoint("TOPLEFT", 0, 0)
-        setup.Content:SetPoint("BOTTOMRIGHT", 0, 0)
+        setup.Content = CreateFrame("Frame", nil, addonDB.Widgets.Content)
+        SetPoint(setup.Content, "TOPLEFT", 0, 0)
+        SetPoint(setup.Content, "BOTTOMRIGHT", 0, 0)
     end
-    local setupWidth = setup.Content:GetWidth()
+    local setupWidth = GetWidth(setup.Content)
 
     -------------------------------------------------------------------------------------------------------------------
     -- Create Order Heading
@@ -1421,7 +1533,6 @@ local function SetupNewEntry(cfg, show)
     -- Create all Order Button
     -------------------------------------------------------------------------------------------------------------------
     setup.Order = setup.Order or {}
-    local order = setup.Order
     local offsetX = 0
     for orderIdx, orderCfg in pairs(orderConfigs) do
         local orderName = orderCfg.Name
@@ -1429,72 +1540,69 @@ local function SetupNewEntry(cfg, show)
         ---------------------------------------------------------------------------------------------------------------
         -- Create Order Button
         ---------------------------------------------------------------------------------------------------------------
-        if order[orderName] == nil then
-            order[orderName] = {}
-            order[orderName]["Button"], order[orderName]["Text"] = CreateButton(setup.Content, orderName, 150, 40, color.DarkGray, color.LightGray)
+        if setup.Order[orderName] == nil then
+            setup.Order[orderName] = {}
+            setup.Order[orderName]["Button"], setup.Order[orderName]["Text"] = CreateButton(setup.Content, orderName, 150, 40, color.DarkGray, color.LightGray)
         end
-        local orderButton, text = order[orderName]["Button"], order[orderName]["Text"]
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update Order Button
+        ---------------------------------------------------------------------------------------------------------------
+        local orderButton, _ = setup.Order[orderName]["Button"], setup.Order[orderName]["Text"]
         orderButton.pushed = false
         orderButton:Enable()
         orderButton:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
         orderButton:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
-        orderButton:SetPoint("TOPLEFT", 20 + offsetX, -30)
-        orderButton:SetScript("OnEnter", function(self)
-            local c = color.Gold
-            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        end)
-        orderButton:SetScript("OnLeave", function(self)
-            if self.pushed then
-                local c = color.Gold
-                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-            else
-                local c = color.LightGray
-                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-            end
-        end)
+        SetPoint(orderButton, "TOPLEFT", 20 + offsetX, -30)
+        AddHover(orderButton, true)
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Update OnClick
+        ---------------------------------------------------------------------------------------------------------------
         orderButton:SetScript("OnClick", function(self)
             if IsDialogShown() and not IsRollShown() then
                 return
             end
-            -- Set orderButton active and update order
-            self.pushed = true
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Update Button
+            -----------------------------------------------------------------------------------------------------------
             local c = color.Gold
-            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            self.pushed = true
             self:Disable()
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
 
-            -- Update order
-            table.sort(setup.Players, orderConfigs[orderIdx]["Callback"])
+            -----------------------------------------------------------------------------------------------------------
+            -- Update Order
+            -----------------------------------------------------------------------------------------------------------
+            local setup = GetActiveSetup()
+            local config = GetActiveConfig()
+
             local vOffset = 0
-
             local sortedOrder = {}
-            for i, player in pairs(setup.Players) do
-                sortedOrder[player.PlayerName] = i
-                player.Container:SetPoint("TOPLEFT", 0, vOffset)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Sort Players in Setup
+            -----------------------------------------------------------------------------------------------------------
+            table.sort(setup.Players, orderConfigs[orderIdx].Callback)
+            ApplyToEach(setup.Players, function(k, v) 
+                sortedOrder[v.PlayerName] = k 
+                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
                 vOffset = vOffset - 32
-            end
-            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
+            end)
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
 
-            for k, config in pairs(configs) do
-                if config.Name == setup.Name then
-                    table.sort(config["PlayerInfos"], function(a, b)
-                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                    end)
-                    break
-                end
-            end
+            table.sort(config.PlayerInfos, function(a, b) return sortedOrder[a.Name] < sortedOrder[b.Name] end)
 
-            for _, s in pairs(widgets.Setups) do
-                if s.Name == name then
-                    -- Set all other orderButton inactive
-                    for k, v in pairs(s["Order"]) do
-                        if orderName ~= k then
-                            local cl = color.LightGray
-                            v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
-                            v.Button.pushed = false
-                            v.Button:Enable()
-                        end
-                    end
-                    break
+            -----------------------------------------------------------------------------------------------------------
+            -- Set all other Button inactive
+            -----------------------------------------------------------------------------------------------------------
+            for k, v in pairs(setup.Order) do
+                if orderName ~= k then
+                    local cl = color.LightGray
+                    v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
+                    v.Button.pushed = false
+                    v.Button:Enable()
                 end
             end
         end)
@@ -1510,12 +1618,12 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     if setup.TableScrollContainer == nil then
         setup.TableScrollContainer = CreateFrame("Frame", nil, setup.Content, "BackdropTemplate")
-        setup.TableScrollContainer:SetPoint("TOPLEFT", 10, -80)
-        setup.TableScrollContainer:SetPoint("BOTTOMRIGHT", -6, 50)
+        SetPoint(setup.TableScrollContainer, "TOPLEFT", 10, -80)
+        SetPoint(setup.TableScrollContainer, "BOTTOMRIGHT", -6, 50)
         setup.TableScrollContainer:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 2,
+            edgeSize = math.max(1, Scaled(2)),
         })
         setup.TableScrollContainer:SetBackdropColor(0, 0, 0, 1)
         setup.TableScrollContainer:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
@@ -1566,8 +1674,8 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     if setup.TableScroll == nil then
         setup.TableScroll = CreateFrame("ScrollFrame", nil, setup.TableScrollContainer, "UIPanelScrollFrameTemplate")
-        setup.TableScroll:SetPoint("TOPLEFT", 0, -25)
-        setup.TableScroll:SetPoint("BOTTOMRIGHT", -27, 5)
+        SetPoint(setup.TableScroll, "TOPLEFT", 0, -25)
+        SetPoint(setup.TableScroll, "BOTTOMRIGHT", Agnostic(-27), 5)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1575,8 +1683,8 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     if setup.Table == nil then
         setup.Table = CreateFrame("Frame")
-        setup.Table:SetWidth(setup.TableScroll:GetWidth())
-        setup.Table:SetHeight(1)
+        SetWidth(setup.Table, GetWidth(setup.TableScroll))
+        SetHeight(setup.Table, 1)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1585,15 +1693,12 @@ local function SetupNewEntry(cfg, show)
     local vOffset = 0
     setup.Players = setup.Players or {}
     for _, playerInfo in pairs(cfg.PlayerInfos or {}) do
-        local player = {}
-        for fk, fv in pairs(widgets.FreePlayers) do 
-            player = fv
+        local player = RemoveFirstElement(addonDB.Widgets.FreePlayers) or {}
+        if player.Container then
             player.Container:Show()
             player.Container:SetParent(setup.Table)
-            table.remove(widgets.FreePlayers, fk)
-            break
         end
-        CreatePlayerFrame(player, cfg, setup, widgets, setup.Table, playerInfo, setup.Table:GetWidth(), 0, vOffset)
+        CreatePlayerFrame(player, cfg, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, vOffset)
         table.insert(setup.Players, player)
         vOffset = vOffset - 32
     end
@@ -1602,7 +1707,7 @@ local function SetupNewEntry(cfg, show)
     -- Create Bottom Line
     -------------------------------------------------------------------------------------------------------------------
     if setup.TableBottomLine == nil then
-        setup.TableBottomLine = CreateLine(setup.Table:GetWidth() - 10, setup.Table, 5, vOffset + 2, color.DarkGray)
+        setup.TableBottomLine = CreateLine(GetWidth(setup.Table) - 10, setup.Table, 5, vOffset + 2, color.DarkGray)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1615,57 +1720,55 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     if setup.Tab == nil then
         setup.Tab = {}
-        setup.Tab.Button, setup.Tab.Text = CreateButton(widgets.TabContent, name, 188, 40, color.DarkGray, color.LightGray)
+        setup.Tab.Button, setup.Tab.Text = CreateButton(addonDB.Widgets.TabContent, name, GetWidth(addonDB.Widgets.TabContent), 40, color.DarkGray, color.LightGray)
     else
         setup.Tab.Button:SetText(name)
         setup.Tab.Button:Show()
     end
-    local button, text = setup.Tab.Button, setup.Tab.Text
-    button:SetScript("OnEnter", function(self)
-        local c = color.Gold
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    end)
-    button:SetScript("OnLeave", function(self)
-        if self.pushed then
-            local c = color.Gold
-            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        else
-            local c = color.LightGray
-            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        end
-    end)
-    button:SetScript("OnMouseDown", function(self, button)
+
+    -------------------------------------------------------------------------------------------------------------------
+    -- Assign Tab Button
+    -------------------------------------------------------------------------------------------------------------------
+    AddHover(setup.Tab.Button, true)
+
+    setup.Tab.Button:SetScript("OnMouseDown", function(self, mouseButton)
         if IsDialogShown() then
             return 
         end
-        if button == "RightButton" then
+
+        if mouseButton == "RightButton" then
             -----------------------------------------------------------------------------------------------------------
             -- Create Right Mouse Click Menu
             -----------------------------------------------------------------------------------------------------------
             local rightMouseClickMenuItems = {}
+
             if addonDB.Tracking.Active and addonDB.Tracking.Name == setup.Name then
+                -------------------------------------------------------------------------------------------------------
+                -- Stop Tracking
+                -------------------------------------------------------------------------------------------------------
                 local item = {
                     text = "Stop Tracking", 
                     func = function() 
+                        local c = color.DarkGray
                         local name = setup.Name
-                        addonDB.Tracking.Active = false 
-                        addonDB.Tracking.Name = nil 
-                        for k, v in pairs(setups) do
-                            if v.Name == name then
-                                local c = color.DarkGray
-                                v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
-                                break
-                            end
-                        end
+
+                        DisableTracking()
+
+                        local _, setup = GetValueByFilter(addonDB.Widgets.Setups, function(k, v) return v.Name == name end)
+                        setup.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
                     end
                 }
                 table.insert(rightMouseClickMenuItems, item);
             else
+                -------------------------------------------------------------------------------------------------------
+                -- Start Tracking
+                -------------------------------------------------------------------------------------------------------
                 local item = {
                     text = "Start Tracking", 
                     func = function() 
                         local name = setup.Name
-                        for k, v in pairs(setups) do
+
+                        for k, v in pairs(addonDB.Widgets.Setups) do
                             if v.Name == name then
                                 local c = color.Highlight
                                 v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
@@ -1674,83 +1777,108 @@ local function SetupNewEntry(cfg, show)
                                 v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
                             end
                         end
-                        addonDB.Tracking.Active = true
-                        addonDB.Tracking.Name = name
+
+                        EnableTracking(name, false)
                     end
                 }
                 table.insert(rightMouseClickMenuItems, item);
             end
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Rename
+            -----------------------------------------------------------------------------------------------------------
             local rename = {
                 text = "Rename...", 
                 func = function() 
                     local name = setup.Name
-                    widgets.Dialogs.Rename.InputField.currentName = name
-                    widgets.Dialogs.Rename.Frame:Show()
+                    addonDB.Widgets.Dialogs.Rename.InputField.currentName = name
+                    ShowFrame(addonDB.Widgets.Dialogs.Rename.Frame)
                 end
             }
             table.insert(rightMouseClickMenuItems, rename);
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Delete
+            -----------------------------------------------------------------------------------------------------------
             local delete = {
                 text = "Delete",
                 func = function()
                     local name = setup.Name
-                    -- Stop tracking if name matches
+                    local key, setup = GetSetupByName(name)
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Disable Tracking
+                    ---------------------------------------------------------------------------------------------------
                     if addonDB.Tracking.Active and addonDB.Tracking.Name == name then
-                        for k, v in pairs(setups) do
-                            if v.Name == name then
-                                local c = color.DarkGray
-                                v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
-                                break
-                            end
-                        end
-                        addonDB.Tracking.Name = nil
-                        addonDB.Tracking.Active = false
+                        local c = color.DarkGray
+                        setup.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
+                        DisableTracking()
                     end
-                    -- Remove 
-                    for k, v in pairs(configs) do
-                        if v.Name == name then
-                            table.remove(configs, k)
-                            break
-                        end
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Remove Config
+                    ---------------------------------------------------------------------------------------------------
+                    RemoveWithFilter(addonDB.Configs, function(k, v) return v.Name == name end)
+                    
+                    ---------------------------------------------------------------------------------------------------
+                    -- Hide Buttons if no configuration exist
+                    ---------------------------------------------------------------------------------------------------
+                    if #addonDB.Configs == 0 then
+                        local c = color.LightGray
+                        addonDB.Widgets.Export.Button:Hide()
+                        addonDB.Widgets.Save.Button:Hide()
+                        addonDB.Widgets.Print.Button:Hide()
+                        addonDB.Widgets.AddPlayers.Button:Disable()
+                        addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
                     end
-                    for k, v in pairs(setups) do
-                        if v.Name == name then
-                            -- Free all player frames
-                            for ek, ev in pairs(v.Players) do 
-                                ev.Container:Hide()
-                                table.insert(widgets.FreePlayers, ev)
-                            end
-                            v.Players = {}
-                            -- Hide Tab button
-                            v.Tab.Button:Hide()
-                            -- Free setup
-                            table.insert(widgets.FreeSetups, v)
-                            table.remove(setups, k)
-                            -- Rearrange visible tab buttons
-                            local i = 0
-                            for ek, ev in pairs(setups) do
-                                ev.Tab.Button:SetPoint("TOPLEFT", 3, -3 - 42 * i)
-                                i = i + 1
-                            end
-                            -- Hide freed setup if visible
-                            if v.Content:IsShown() then
-                                v.Content:Hide()
-                                -- Show another frame if available
-                                for ek, ev in pairs(setups) do
-                                    local c = color.Gold
-                                    ev.Tab.Button.pushed = true
-                                    ev.Tab.Button:Disable()
-                                    ev.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-                                    ev.Content:Show()
-                                    break
-                                end
-                            end
-                            break
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Hide all Player Containers and Move to FreePlayers
+                    ---------------------------------------------------------------------------------------------------
+                    setup.Tab.Button:Hide()
+                    for _, ev in pairs(setup.Players) do 
+                        ev.Container:Hide()
+                        table.insert(addonDB.Widgets.FreePlayers, ev)
+                    end
+                    setup.Players = {}
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Delete Setup
+                    ---------------------------------------------------------------------------------------------------
+                    table.insert(addonDB.Widgets.FreeSetups, setup)
+                    table.remove(addonDB.Widgets.Setups, key)
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Rearrange Tabs
+                    ---------------------------------------------------------------------------------------------------
+                    RearrangeFrames(addonDB.Widgets.Setups, "TOPLEFT", 0, -42, function(v) return v.Tab.Button end, 3, -3)
+
+                    ---------------------------------------------------------------------------------------------------
+                    -- Hide Freed Setups
+                    ---------------------------------------------------------------------------------------------------
+                    HideFrame(setup.Content)
+                    local _, ev = GetFirstValue(addonDB.Widgets.Setups)
+                    if ev then
+                        local c = color.Gold
+                        ev.Tab.Button.pushed = true
+                        ev.Tab.Button:Disable()
+                        ev.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+                        ev.Content:Show()
+
+                        if addonDB.Tracking.Active and addonDB.Tracking.Name == ev.Tab.Text:GetText() then
+                            addonDB.Widgets.Share.Frame:Show()
+                        else 
+                            addonDB.Widgets.Share.Frame:Hide()
                         end
                     end
                 end
             }
             table.insert(rightMouseClickMenuItems, delete)
-            EasyMenu(rightMouseClickMenuItems, widgets.RightMouseClickTabMenu, "cursor", 0, 0, "MENU", 1)
+
+            -----------------------------------------------------------------------------------------------------------
+            -- Setup Right Mouse Click Menu
+            -----------------------------------------------------------------------------------------------------------
+            EasyMenu(rightMouseClickMenuItems, addonDB.Widgets.RightMouseClickTabMenu, "cursor", 0, 0, "MENU", 1)
         else
             -----------------------------------------------------------------------------------------------------------
             -- Activate Tab and Show Its Content
@@ -1759,37 +1887,49 @@ local function SetupNewEntry(cfg, show)
             self:Disable()
             local c = color.Gold
             self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-            for _, s in pairs(widgets.Setups) do
-                if s.Name == self:GetText() then
-                    s.Content:Show()
-                    break
-                end
-            end
 
             -----------------------------------------------------------------------------------------------------------
-            -- Hide All Other Content
+            -- Show Content and Hide All Other Content
             -----------------------------------------------------------------------------------------------------------
-            for _, s in pairs(widgets.Setups) do
+            for _, s in pairs(addonDB.Widgets.Setups) do
                 if s.Name ~= self:GetText() then
                     local cl = color.LightGray
                     s.Tab.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
                     s.Tab.Button.pushed = false
                     s.Tab.Button:Enable()
                     s.Content:Hide()
+                else
+                    if addonDB.Tracking.Active and addonDB.Tracking.Name == s.Tab.Text:GetText() then
+                        addonDB.Widgets.Share.Frame:Show()
+                    else
+                        addonDB.Widgets.Share.Frame:Hide()
+                    end
+                    s.Content:Show()
                 end
             end
         end
     end)
-    button:SetPoint("TOPLEFT", 3, -3 - 42 * (#setups - 1))
+    SetPoint(setup.Tab.Button, "TOPLEFT", 3, -3 - 42 * (#addonDB.Widgets.Setups - 1))
 
     -------------------------------------------------------------------------------------------------------------------
     -- Show Or Hide The Newly Created Frame Based On Argument
     -------------------------------------------------------------------------------------------------------------------
     if show then
-        button.pushed = true
         local c = color.Gold
-        button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        setup.Tab.Button.pushed = true
+        addonDB.Widgets.Export.Button:Show()
+        addonDB.Widgets.Save.Button:Show()
+        addonDB.Widgets.Print.Button:Show()
+        addonDB.Widgets.AddPlayers.Button:Enable()
+        addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
+        setup.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
         setup.Content:Show()
+
+        if addonDB.Tracking.Active and addonDB.Tracking.Name == setup.Tab.Text:GetText() then
+            addonDB.Widgets.Share.Frame:Show()
+        else
+            addonDB.Widgets.Share.Frame:Hide()
+        end
     else
         setup.Content:Hide()
     end
@@ -1799,276 +1939,490 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     return setup
 end
+-----------------------------------------------------------------------------------------------------------------------
+-- Create Right Mouse Click Menu Frame
+-----------------------------------------------------------------------------------------------------------------------
+addonDB.Widgets.RightMouseClickTabMenu = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
 
 -----------------------------------------------------------------------------------------------------------------------
--- Options Dialog
+-- Create Addon Window
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options = {}
-widgets.Dialogs.Options.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Options.Frame:SetSize(650, 600)
-widgets.Dialogs.Options.Frame:SetMovable(true)
-widgets.Dialogs.Options.Frame:EnableMouse(true)
-widgets.Dialogs.Options.Frame:RegisterForDrag("LeftButton")
-widgets.Dialogs.Options.Frame:SetScript("OnDragStart", widgets.Addon.StartMoving)
-widgets.Dialogs.Options.Frame:SetScript("OnDragStop", widgets.Addon.StopMovingOrSizing)
-widgets.Dialogs.Options.Frame:SetPoint("CENTER", widgets.Addon, "CENTER", 0, 0)
-widgets.Dialogs.Options.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Options.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Options.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Options.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Options.Frame:Hide()
+addonDB.Widgets.Addon = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 
 -----------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Header
+-- Setup User Interfacd
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", widgets.Dialogs.Options.Frame:GetWidth() - 10, widgets.Dialogs.Options.Frame, 5, -10, true)
+local function SetupUserInterface()
+    -------------------------------------------------------------------------------------------------------------------
+    -- Setup Main Frame
+    -------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Addon:SetFrameStrata("HIGH")
+    SetSize(addonDB.Widgets.Addon, 1600, 1000)
+    addonDB.Widgets.Addon:SetMovable(true)
+    addonDB.Widgets.Addon:EnableMouse(true)
+    addonDB.Widgets.Addon:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Addon:SetScript("OnDragStart", addonDB.Widgets.Addon.StartMoving)
+    addonDB.Widgets.Addon:SetScript("OnDragStop", addonDB.Widgets.Addon.StopMovingOrSizing)
+    SetPoint(addonDB.Widgets.Addon, "CENTER")
+    addonDB.Widgets.Addon:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Addon:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Addon:SetBackdropBorderColor(0, 0, 0, 1)
 
------------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Close Button 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.Close = {}
-widgets.Dialogs.Options.Close.Button, widgets.Dialogs.Options.Close.Text = CreateButton(widgets.Dialogs.Options.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.Options.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Options.Frame, "BOTTOMRIGHT", -10, 10)
-widgets.Dialogs.Options.Close.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Options.Close.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Options.Close.Button:SetScript("OnClick", function(self)
-    widgets.Dialogs.Options.Frame:Hide()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Tab Scroll
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.TabScroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Addon, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.TabScroll, "TOPLEFT", 6, -6)
+    SetPoint(addonDB.Widgets.TabScroll, "BOTTOMRIGHT", addonDB.Widgets.Addon, "BOTTOMLEFT", 195, 6 + 100)
+    addonDB.Widgets.TabScroll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.TabScroll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.TabScroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 
------------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Tier Identifier Inputfield
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, widgets.Dialogs.Options.Frame, "InputBoxTemplate")
-widgets.Dialogs.Options.TierIdInputField:SetWidth(widgets.Dialogs.Options.Frame:GetWidth() - 60)
-widgets.Dialogs.Options.TierIdInputField:SetHeight(30)
-widgets.Dialogs.Options.TierIdInputField:SetPoint("TOP", widgets.Dialogs.Options.Frame, "TOP", 0, -50)
-widgets.Dialogs.Options.TierIdInputField:SetAutoFocus(false)
-widgets.Dialogs.Options.TierIdInputField:SetMaxLetters(0)
-widgets.Dialogs.Options.TierIdInputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.Options.TierIdInputField:SetScript("OnTextChanged", function(self) 
-    local c = color.White
-    self:SetTextColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Options.TierIdInputField:SetScript("OnEnterPressed", function(self) 
-    local text = widgets.Dialogs.Options.TierIdInputField:GetText()
-    local split = SplitString(text, ",")
-    local numbers = {}
-    for _, v in pairs(split) do
-        local num = tonumber(v)
-        if not num then
-            local c = color.Red
-            widgets.Dialogs.Options.TierIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Tab Content And Insert Into Tab Scroll
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.TabContent = CreateFrame("Frame", nil, addonDB.Widgets.TabScroll)
+    SetWidth(addonDB.Widgets.TabContent, GetWidth(addonDB.Widgets.TabScroll) - 7)
+    SetHeight(addonDB.Widgets.TabContent, 1)
+    addonDB.Widgets.TabScroll:SetScrollChild(addonDB.Widgets.TabContent)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create CreatedBy Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.CreatedBy = addonDB.Widgets.Addon:CreateFontString(nil, "ARTWORK")
+    SetPoint(addonDB.Widgets.CreatedBy, "BOTTOMLEFT", 10, 6)
+    addonDB.Widgets.CreatedBy:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "NONE")
+    addonDB.Widgets.CreatedBy:SetTextColor(1, 0.8, 0) -- set the color to golden
+    addonDB.Widgets.CreatedBy:SetText("Created by " .. author)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Content Frame
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Content = CreateFrame("Frame", nil, addonDB.Widgets.Addon, "BackdropTemplate")
+    SetPoint(addonDB.Widgets.Content, "TOPLEFT", 227, -6)
+    SetPoint(addonDB.Widgets.Content, "BOTTOMRIGHT", -6, 6)
+    addonDB.Widgets.Content:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Content:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Content:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Close Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Close = {}
+    addonDB.Widgets.Close.Button, addonDB.Widgets.Close.Text = CreateButton(addonDB.Widgets.Content, "Close", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Close.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
             return
         end
-        table.insert(numbers, num)
-    end
-    addonDB.Options.TierItems = numbers
-end)
-widgets.Dialogs.Options.TierIdInputField:SetScript("OnEscapePressed", function(self) 
-    self:SetText(ArrayToString(addonDB.Options.TierItems))
-end)
+        ToggleFrame(addonDB.Widgets.Addon)
+    end)
+    AddHover(addonDB.Widgets.Close.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Tier Identifier Label 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Options.TierIdLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Options.TierIdInputField, "TOPLEFT", 10, 0)
-
------------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Tier Identifier Inputfield
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, widgets.Dialogs.Options.Frame, "InputBoxTemplate")
-widgets.Dialogs.Options.RareIdInputField:SetWidth(widgets.Dialogs.Options.Frame:GetWidth() - 60)
-widgets.Dialogs.Options.RareIdInputField:SetHeight(30)
-widgets.Dialogs.Options.RareIdInputField:SetPoint("TOP", widgets.Dialogs.Options.Frame, "TOP", 0, -100)
-widgets.Dialogs.Options.RareIdInputField:SetAutoFocus(false)
-widgets.Dialogs.Options.RareIdInputField:SetMaxLetters(0)
-widgets.Dialogs.Options.RareIdInputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.Options.RareIdInputField:SetScript("OnTextChanged", function(self) 
-    local c = color.White
-    self:SetTextColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Options.RareIdInputField:SetScript("OnEnterPressed", function(self) 
-    local text = widgets.Dialogs.Options.RareIdInputField:GetText()
-    local split = SplitString(text, ",")
-    local numbers = {}
-    for _, v in pairs(split) do
-        local num = tonumber(v)
-        if not num then
-            local c = color.Red
-            widgets.Dialogs.Options.RareIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Save Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Save = {}
+    addonDB.Widgets.Save.Button, addonDB.Widgets.Save.Text = CreateButton(addonDB.Widgets.Content, "Save", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Save.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -122, 10)
+    addonDB.Widgets.Save.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
             return
         end
-        table.insert(numbers, num)
-    end
-    addonDB.Options.RareItems = numbers
-end)
-widgets.Dialogs.Options.RareIdInputField:SetScript("OnEscapePressed", function(self) 
-    self:SetText(ArrayToString(addonDB.Options.RareItems))
-end)
 
------------------------------------------------------------------------------------------------------------------------
--- Options Dialog: Rare Identifier Label 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Options.RareIdLabel = CreateLabel("Rare Identifiers:", widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Options.RareIdLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Options.RareIdInputField, "TOPLEFT", 10, 0)
+        -------------------------------------------------------------------------------------------------------------------
+        -- Get Config and Setup
+        -------------------------------------------------------------------------------------------------------------------
+        local config = GetActiveConfig()
+        local setup = GetActiveSetup()
 
------------------------------------------------------------------------------------------------------------------------
--- Print Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Print = {}
-widgets.Dialogs.Print.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Print.Frame:SetSize(650, 600)
-widgets.Dialogs.Print.Frame:SetMovable(true)
-widgets.Dialogs.Print.Frame:EnableMouse(true)
-widgets.Dialogs.Print.Frame:RegisterForDrag("LeftButton")
-widgets.Dialogs.Print.Frame:SetScript("OnDragStart", widgets.Addon.StartMoving)
-widgets.Dialogs.Print.Frame:SetScript("OnDragStop", widgets.Addon.StopMovingOrSizing)
-widgets.Dialogs.Print.Frame:SetPoint("CENTER")
-widgets.Dialogs.Print.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Print.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Print.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Print.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Print.Frame:Hide()
+        if not config or not setup then
+            return
+        end
 
------------------------------------------------------------------------------------------------------------------------
--- Print Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Print.Header = CreateHeading("PRINT", widgets.Dialogs.Print.Frame:GetWidth() - 10, widgets.Dialogs.Print.Frame, 5, -10, true)
+        -------------------------------------------------------------------------------------------------------------------
+        -- Update Config and Setup
+        -------------------------------------------------------------------------------------------------------------------
+        for _, player in pairs(setup.Players) do
+            local _, info = GetValueByFilter(config.PlayerInfos, function(k, v) return player.PlayerName == v.Name end)
 
------------------------------------------------------------------------------------------------------------------------
--- Print Dialog: Scroll Area 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Print.Scroll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Print.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Print.Scroll:SetPoint("TOPLEFT", 6, -30)
-widgets.Dialogs.Print.Scroll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -27, 40)
-widgets.Dialogs.Print.Scroll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Print.Scroll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Print.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-widgets.Dialogs.Print.Scroll:SetClipsChildren(true)
+            info.Rare = info.Rare + tonumber(player.RareDiffText:GetText())
+            info.Tier = info.Tier + tonumber(player.TierDiffText:GetText())
+            info.Normal = info.Normal + tonumber(player.NormalDiffText:GetText())
 
------------------------------------------------------------------------------------------------------------------------
--- Print Dialog: EditBox
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Print.EditBox = CreateFrame("EditBox", nil, widgets.Dialogs.Print.Scroll)
-widgets.Dialogs.Print.EditBox:SetMultiLine(true)
-widgets.Dialogs.Print.EditBox:SetFontObject("ChatFontNormal")
-widgets.Dialogs.Print.EditBox:SetWidth(widgets.Dialogs.Print.Scroll:GetWidth())
-widgets.Dialogs.Print.EditBox:SetAutoFocus(false)
-widgets.Dialogs.Print.EditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+            player.RareText:SetText(info.Rare)
+            player.TierText:SetText(info.Tier)
+            player.NormalText:SetText(info.Normal)
+            player.RareDiffText:SetText(0)
+            player.TierDiffText:SetText(0)
+            player.NormalDiffText:SetText(0)
+            player.RareDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
+            player.TierDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
+            player.NormalDiffText:SetTextColor(color.White.r, color.White.g, color.White.b)
+        end
 
-widgets.Dialogs.Print.Scroll:SetScrollChild(widgets.Dialogs.Print.EditBox)
+        ShareConfiguration(config)
+    end)
+    AddHover(addonDB.Widgets.Save.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Print Dialog: Close Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Print.Close = {}
-widgets.Dialogs.Print.Close.Button, widgets.Dialogs.Print.Close.Text = CreateButton(widgets.Dialogs.Print.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.Print.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -10, 10)
-widgets.Dialogs.Print.Close.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Print.Close.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Print.Close.Button:SetScript("OnClick", function(self)
-    widgets.Dialogs.Print.Frame:Hide()
-    widgets.Dialogs.Print.EditBox:SetText("")
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Export Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Export = {}
+    addonDB.Widgets.Export.Button, addonDB.Widgets.Export.Text = CreateButton(addonDB.Widgets.Content, "Export", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Export.Button, "BOTTOMLEFT", addonDB.Widgets.Content, "BOTTOMLEFT", 10, 10)
+    addonDB.Widgets.Export.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
 
------------------------------------------------------------------------------------------------------------------------
--- Rename Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Rename = {}
-widgets.Dialogs.Rename.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Rename.Frame:SetFrameStrata("HIGH")
-widgets.Dialogs.Rename.Frame:SetSize(250, 90)
-widgets.Dialogs.Rename.Frame:SetMovable(false)
-widgets.Dialogs.Rename.Frame:SetPoint("CENTER")
-widgets.Dialogs.Rename.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Rename.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Rename.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Rename.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Rename.Frame:Hide()
+        -- Serialize
+        local encoded = SerializeConfig(GetActiveConfig())
 
------------------------------------------------------------------------------------------------------------------------
--- Rename Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Rename.Header = CreateHeading("RENAME", widgets.Dialogs.Rename.Frame:GetWidth() - 10, widgets.Dialogs.Rename.Frame, 5, -10, true)
+        addonDB.Widgets.Dialogs.Export.InputField:SetMaxLetters(0)
+        addonDB.Widgets.Dialogs.Export.InputField:SetText(encoded)
+        addonDB.Widgets.Dialogs.Export.Frame:Show()
+    end)
+    AddHover(addonDB.Widgets.Export.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Rename Dialog: Escape Label 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Rename.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.Rename.Frame, 10, 10, color.White, "BOTTOMLEFT")
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Print Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Print = {}
+    addonDB.Widgets.Print.Button, addonDB.Widgets.Print.Text = CreateButton(addonDB.Widgets.Content, "Print", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Print.Button, "BOTTOMLEFT", addonDB.Widgets.Export.Button, "BOTTOMRIGHT", 10, 0)
+    addonDB.Widgets.Print.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
 
------------------------------------------------------------------------------------------------------------------------
--- Rename Dialog: Enter Label 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Rename.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.Rename.Frame, -10, 10, color.White, "BOTTOMRIGHT")
+        local config = GetActiveConfig()
+        local content =  ""
+        content = content .. "+------------------------------------------+-------+-------+--------+\n" 
+        content = content .. "| Character Name                           | Rares | Tiers | Normal |\n"
+        for _, playerInfo in pairs(config.PlayerInfos) do
+            local _, count = string.gsub(playerInfo.Name, '[^\128-\193]', '')
+            content = content .. "+------------------------------------------+-------+-------+--------+\n"
+            content = content .. "| " .. playerInfo.Name .. Ws(39 - count) .. " | " .. string.format("%5d", playerInfo.Rare)  .. " | " .. string.format("%5d", playerInfo.Tier) .. " | " .. string.format("%6d", playerInfo.Normal) .. " |\n"
+        end
+        content = content .. "+------------------------------------------+-------+-------+--------+\n"
 
------------------------------------------------------------------------------------------------------------------------
--- Rename Dialog: Inputfield
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Rename.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Rename.Frame, "InputBoxTemplate")
-widgets.Dialogs.Rename.InputField:SetWidth(widgets.Dialogs.Rename.Frame:GetWidth() - 30)
-widgets.Dialogs.Rename.InputField:SetHeight(30)
-widgets.Dialogs.Rename.InputField:SetPoint("TOPLEFT", widgets.Dialogs.Rename.Frame, "TOPLEFT", 17, -30)
-widgets.Dialogs.Rename.InputField:SetAutoFocus(true)
-widgets.Dialogs.Rename.InputField:SetMaxLetters(25)
-widgets.Dialogs.Rename.InputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.Rename.InputField:SetScript("OnTextChanged", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
-        -- Check if name already taken
-        for k, v in pairs(configs) do
-            if v.Name == input and self.currentName ~= v.Name then
-                self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+        addonDB.Widgets.Dialogs.Print.EditBox:SetText(content)
+        ShowFrame(addonDB.Widgets.Dialogs.Print.Frame)
+    end)
+    AddHover(addonDB.Widgets.Print.Button)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Share Checkbox
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Share = {}
+    addonDB.Widgets.Share.Frame = CreateFrame("Frame", nil, addonDB.Widgets.Content, "BackdropTemplate")
+    addonDB.Widgets.Share.Frame:SetFrameStrata("HIGH")
+    SetSize(addonDB.Widgets.Share.Frame, 170, 35)
+    addonDB.Widgets.Share.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Share.Frame, "LEFT", addonDB.Widgets.Print.Button, "RIGHT", 100, 0)
+    addonDB.Widgets.Share.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Share.Frame:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, 1)
+    addonDB.Widgets.Share.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Share.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Share.Frame:Hide()
+
+    addonDB.Widgets.Share.Checkbox = CreateFrame("CheckButton", nil, addonDB.Widgets.Share.Frame, "ChatConfigCheckButtonTemplate")
+    SetSize(addonDB.Widgets.Share.Checkbox, 24, 24)
+    addonDB.Widgets.Share.Checkbox:SetChecked(false)
+    SetPoint(addonDB.Widgets.Share.Checkbox, "LEFT", 10, 0)
+    addonDB.Widgets.Share.Checkbox:SetScript("OnClick", function(self) 
+        addonDB.Sharing = self:GetChecked()
+        ShareConfiguration(select(2, GetConfigByName(addonDB.Tracking.Name)))
+    end)
+
+    addonDB.Widgets.Share.Label = CreateLabel("Share Updates", addonDB.Widgets.Share.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Share.Label, "LEFT", addonDB.Widgets.Share.Checkbox, "RIGHT", 10, 0)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options = {}
+    addonDB.Widgets.Dialogs.Options.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Options.Frame, 650, 600)
+    addonDB.Widgets.Dialogs.Options.Frame:SetMovable(true)
+    addonDB.Widgets.Dialogs.Options.Frame:EnableMouse(true)
+    addonDB.Widgets.Dialogs.Options.Frame:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Dialogs.Options.Frame:SetScript("OnDragStart", addonDB.Widgets.Addon.StartMoving)
+    addonDB.Widgets.Dialogs.Options.Frame:SetScript("OnDragStop", addonDB.Widgets.Addon.StopMovingOrSizing)
+    SetPoint(addonDB.Widgets.Dialogs.Options.Frame, "CENTER", addonDB.Widgets.Addon, "CENTER", 0, 0)
+    addonDB.Widgets.Dialogs.Options.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Options.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Options.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Options.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Options.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 10, addonDB.Widgets.Dialogs.Options.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Close Button 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.Close = {}
+    addonDB.Widgets.Dialogs.Options.Close.Button, addonDB.Widgets.Dialogs.Options.Close.Text = CreateButton(addonDB.Widgets.Dialogs.Options.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.Options.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Options.Frame, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Dialogs.Options.Close.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Options.Frame:Hide()
+    end)
+    AddHover(addonDB.Widgets.Dialogs.Options.Close.Button)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Tier Identifier Inputfield
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 60)
+    SetHeight(addonDB.Widgets.Dialogs.Options.TierIdInputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.Frame, "TOP", 0, -50)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetMaxLetters(0)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetScript("OnTextChanged", function(self) 
+        local c = color.White
+        self:SetTextColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetScript("OnEnterPressed", function(self) 
+        local text = addonDB.Widgets.Dialogs.Options.TierIdInputField:GetText()
+        local split = SplitString(text, ",")
+        local numbers = {}
+        for _, v in pairs(split) do
+            local num = tonumber(v)
+            if not num then
+                local c = color.Red
+                addonDB.Widgets.Dialogs.Options.TierIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
                 return
             end
+            table.insert(numbers, num)
         end
-        self:SetTextColor(color.White.r, color.White.g, color.White.b)
-    end
-end)
-widgets.Dialogs.Rename.InputField:SetScript("OnEnterPressed", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
+        addonDB.Options.TierItems = numbers
+    end)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField:SetScript("OnEscapePressed", function(self) 
+        self:SetText(ArrayToString(addonDB.Options.TierItems))
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Tier Identifier Label 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", addonDB.Widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOPLEFT", 10, 0)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Tier Identifier Inputfield
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 60)
+    SetHeight(addonDB.Widgets.Dialogs.Options.RareIdInputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.Frame, "TOP", 0, -100)
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetMaxLetters(0)
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetScript("OnTextChanged", function(self) 
+        local c = color.White
+        self:SetTextColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetScript("OnEnterPressed", function(self) 
+        local text = addonDB.Widgets.Dialogs.Options.RareIdInputField:GetText()
+        local split = SplitString(text, ",")
+        local numbers = {}
+        for _, v in pairs(split) do
+            local num = tonumber(v)
+            if not num then
+                local c = color.Red
+                addonDB.Widgets.Dialogs.Options.RareIdInputField:SetTextColor(c.r, c.g, c.b, c.a)
+                return
+            end
+            table.insert(numbers, num)
+        end
+        addonDB.Options.RareItems = numbers
+    end)
+    addonDB.Widgets.Dialogs.Options.RareIdInputField:SetScript("OnEscapePressed", function(self) 
+        self:SetText(ArrayToString(addonDB.Options.RareItems))
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Rare Identifier Label 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.RareIdLabel = CreateLabel("Rare Identifiers:", addonDB.Widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOPLEFT", 10, 0)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Print Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Print = {}
+    addonDB.Widgets.Dialogs.Print.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Print.Frame, 650, 600)
+    addonDB.Widgets.Dialogs.Print.Frame:SetMovable(true)
+    addonDB.Widgets.Dialogs.Print.Frame:EnableMouse(true)
+    addonDB.Widgets.Dialogs.Print.Frame:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Dialogs.Print.Frame:SetScript("OnDragStart", addonDB.Widgets.Addon.StartMoving)
+    addonDB.Widgets.Dialogs.Print.Frame:SetScript("OnDragStop", addonDB.Widgets.Addon.StopMovingOrSizing)
+    SetPoint(addonDB.Widgets.Dialogs.Print.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.Print.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Print.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Print.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Print.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Print.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Print Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Print.Header = CreateHeading("PRINT", GetWidth(addonDB.Widgets.Dialogs.Print.Frame) - 10, addonDB.Widgets.Dialogs.Print.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Print Dialog: Scroll Area 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Print.Scroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.Print.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Print.Scroll, "TOPLEFT", 10, -30)
+    SetPoint(addonDB.Widgets.Dialogs.Print.Scroll, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -10, 45)
+    addonDB.Widgets.Dialogs.Print.Scroll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Print.Scroll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Print.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    addonDB.Widgets.Dialogs.Print.Scroll:SetClipsChildren(true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Print Dialog: EditBox
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Print.EditBox = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Print.Scroll)
+    addonDB.Widgets.Dialogs.Print.EditBox:SetMultiLine(true)
+    addonDB.Widgets.Dialogs.Print.EditBox:SetFontObject("ChatFontNormal")
+    SetWidth(addonDB.Widgets.Dialogs.Print.EditBox, GetWidth(addonDB.Widgets.Dialogs.Print.Scroll))
+    addonDB.Widgets.Dialogs.Print.EditBox:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.Print.EditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+
+    addonDB.Widgets.Dialogs.Print.Scroll:SetScrollChild(addonDB.Widgets.Dialogs.Print.EditBox)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Print Dialog: Close Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Print.Close = {}
+    addonDB.Widgets.Dialogs.Print.Close.Button, addonDB.Widgets.Dialogs.Print.Close.Text = CreateButton(addonDB.Widgets.Dialogs.Print.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.Print.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Print.Frame, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Dialogs.Print.Close.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Print.Frame:Hide()
+        addonDB.Widgets.Dialogs.Print.EditBox:SetText("")
+    end)
+    AddHover(addonDB.Widgets.Dialogs.Print.Close.Button)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Rename Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Rename = {}
+    addonDB.Widgets.Dialogs.Rename.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    addonDB.Widgets.Dialogs.Rename.Frame:SetFrameStrata("HIGH")
+    SetSize(addonDB.Widgets.Dialogs.Rename.Frame, 250, 90)
+    addonDB.Widgets.Dialogs.Rename.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.Rename.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.Rename.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Rename.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Rename.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Rename.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Rename.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Rename Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Rename.Header = CreateHeading("RENAME", GetWidth(addonDB.Widgets.Dialogs.Rename.Frame) - 10, addonDB.Widgets.Dialogs.Rename.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Rename Dialog: Escape Label 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Rename.Escape = CreateLabel("<ESC>: Cancel", addonDB.Widgets.Dialogs.Rename.Frame, 10, 10, color.White, "BOTTOMLEFT")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Rename Dialog: Enter Label 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Rename.Enter = CreateLabel("<ENTER>: Confirm", addonDB.Widgets.Dialogs.Rename.Frame, -10, 10, color.White, "BOTTOMRIGHT")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Rename Dialog: Inputfield
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Rename.InputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Rename.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Rename.InputField, GetWidth(addonDB.Widgets.Dialogs.Rename.Frame) - 30)
+    SetHeight(addonDB.Widgets.Dialogs.Rename.InputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Rename.InputField, "TOPLEFT", addonDB.Widgets.Dialogs.Rename.Frame, "TOPLEFT", 17, -30)
+    addonDB.Widgets.Dialogs.Rename.InputField:SetAutoFocus(true)
+    addonDB.Widgets.Dialogs.Rename.InputField:SetMaxLetters(25)
+    addonDB.Widgets.Dialogs.Rename.InputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Rename.InputField:SetScript("OnTextChanged", function(self) 
+        local input = self:GetText()
+        if #input > 0 then
+            if GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == input and self.currentName ~= v.Name end) then
+                self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+            else
+                self:SetTextColor(color.White.r, color.White.g, color.White.b)
+            end
+        end
+    end)
+    addonDB.Widgets.Dialogs.Rename.InputField:SetScript("OnEnterPressed", function(self) 
+        local input = self:GetText()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Return on no input
+        -------------------------------------------------------------------------------------------------------------------
+        if #input == 0 then
+            return
+        end
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- If Name changed
+        -------------------------------------------------------------------------------------------------------------------
         if input ~= self.currentName then
-            -- Check if name already taken
-            for k, v in pairs(configs) do
-                if v.Name == input then
-                    return
-                end
+            ---------------------------------------------------------------------------------------------------------------
+            -- Return if name already taken
+            ---------------------------------------------------------------------------------------------------------------
+            if GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == input end) then
+                return
             end
 
             if self.config then
+                -----------------------------------------------------------------------------------------------------------
+                -- Rename because of Override
+                -----------------------------------------------------------------------------------------------------------
                 self.config.Name = input
                 self.currentName = self.config.Name
-                -- Hide other setups since new tab is activated by default
-                for k, v in pairs(setups) do
+
+                -----------------------------------------------------------------------------------------------------------
+                -- Hide all other content
+                -----------------------------------------------------------------------------------------------------------
+                for k, v in pairs(addonDB.Widgets.Setups) do
                     if v.Name ~= self.currentName then
                         v.Content:Hide()
                         v.Tab.Button.pushed = false
@@ -2076,272 +2430,289 @@ widgets.Dialogs.Rename.InputField:SetScript("OnEnterPressed", function(self)
                         v.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
                     end
                 end
-                -- Insert and setup new entry
-                table.insert(configs, self.config)
+
+                -----------------------------------------------------------------------------------------------------------
+                -- Setup new Raid Entry
+                -----------------------------------------------------------------------------------------------------------
+                table.insert(addonDB.Configs, self.config)
                 SetupNewEntry(self.config, true)
             else
-                for k, v in pairs(configs) do
-                    if v.Name == self.currentName then
-                        v.Name = input
-                        break
-                    end
-                end
-                for k, v in pairs(widgets.Setups) do
-                    if v.Name == self.currentName then
-                        v.Name = input
-                        v.Tab.Text:SetText(input)
-                        break
-                    end
-                end
+                -----------------------------------------------------------------------------------------------------------
+                -- Rename Config and Setup
+                -----------------------------------------------------------------------------------------------------------
+                local _, config = GetConfigByName(self.currentName)
+                config.Name = input
+
+                local _, setup = GetSetupByName(self.currentName)
+                setup.Name = input
+                setup.Tab.Text:SetText(input)
             end
-            -- Update tracking raid name 
+
+            ---------------------------------------------------------------------------------------------------------------
+            -- Update Tracking Name
+            ---------------------------------------------------------------------------------------------------------------
             if addonDB.Tracking.Active and addonDB.Tracking.Name == self.currentName then
                 addonDB.Tracking.Name = input
             end
         end
-        widgets.Dialogs.Rename.Frame:Hide()
-        widgets.Dialogs.Rename.Escape:Show()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide Frame
+        -------------------------------------------------------------------------------------------------------------------
+        HideFrame(addonDB.Widgets.Dialogs.Rename.Frame)
+        HideFrame(addonDB.Widgets.Dialogs.Rename.Escape)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Reset Data
+        -------------------------------------------------------------------------------------------------------------------
         self.currentName = nil
         self.config = nil
         self:SetText("")
-    end
-end)
-widgets.Dialogs.Rename.InputField:SetScript("OnEscapePressed", function(self) 
-    if widgets.Dialogs.Rename.Frame:IsShown() and widgets.Dialogs.Rename.Escape:IsShown() then
-        self:SetText("")
-        self.currentName = nil
-        widgets.Dialogs.Rename.Frame:Hide()
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Export Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Export = {}
-widgets.Dialogs.Export.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Export.Frame:SetSize(250, 90)
-widgets.Dialogs.Export.Frame:SetMovable(false)
-widgets.Dialogs.Export.Frame:SetPoint("CENTER")
-widgets.Dialogs.Export.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Export.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Export.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Export.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Export.Frame:Hide()
-
------------------------------------------------------------------------------------------------------------------------
--- Export Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Export.Header = CreateHeading("EXPORT", widgets.Dialogs.Export.Frame:GetWidth() - 10, widgets.Dialogs.Export.Frame, 5, -10, true)
-
------------------------------------------------------------------------------------------------------------------------
--- Export Dialog: Escape Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Export.Escape = CreateLabel("<ESC>: Close", widgets.Dialogs.Export.Frame, 0, 10, color.White, "BOTTOM")
-
------------------------------------------------------------------------------------------------------------------------
--- Export Dialog: InputField
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Export.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Export.Frame, "InputBoxTemplate")
-widgets.Dialogs.Export.InputField:SetWidth(widgets.Dialogs.Export.Frame:GetWidth() - 30)
-widgets.Dialogs.Export.InputField:SetHeight(30)
-widgets.Dialogs.Export.InputField:SetPoint("TOPLEFT", widgets.Dialogs.Export.Frame, "TOPLEFT", 17, -30)
-widgets.Dialogs.Export.InputField:SetAutoFocus(true)
-widgets.Dialogs.Export.InputField:SetMaxLetters(0)
-widgets.Dialogs.Export.InputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.Export.InputField:SetScript("OnEscapePressed", function(self) 
-    if widgets.Dialogs.Export.Frame:IsShown() then
-        self:SetText("")
-        widgets.Dialogs.Export.Frame:Hide()
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Conflict Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Conflict = {}
-widgets.Dialogs.Conflict.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Conflict.Frame:SetSize(250, 80)
-widgets.Dialogs.Conflict.Frame:SetMovable(false)
-widgets.Dialogs.Conflict.Frame:SetPoint("CENTER")
-widgets.Dialogs.Conflict.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Conflict.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Conflict.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Conflict.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Conflict.Frame:Hide()
-
------------------------------------------------------------------------------------------------------------------------
--- Conflict Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Conflict.Header = CreateHeading("NAME CONFLICT", widgets.Dialogs.Conflict.Frame:GetWidth() - 10, widgets.Dialogs.Conflict.Frame, 5, -10, true)
-
------------------------------------------------------------------------------------------------------------------------
--- Conflict Dialog: Update Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Conflict.Update = {}
-widgets.Dialogs.Conflict.Update.Button, widgets.Dialogs.Conflict.Update.Text = CreateButton(widgets.Dialogs.Conflict.Frame, "Update", 102, 35, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Conflict.Update.Button:SetPoint("TOPLEFT", widgets.Dialogs.Conflict.Frame, "TOPLEFT", 15, -30)
-widgets.Dialogs.Conflict.Update.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Conflict.Update.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Conflict.Update.Button:SetScript("OnClick", function(self)
-    -- Clear previously existing
-    for k, v in pairs(configs) do
-        if v.Name == widgets.Dialogs.Conflict.config.Name then
-            table.remove(configs, k)
-            break
+    end)
+    addonDB.Widgets.Dialogs.Rename.InputField:SetScript("OnEscapePressed", function(self) 
+        if addonDB.Widgets.Dialogs.Rename.Frame:IsShown() and addonDB.Widgets.Dialogs.Rename.Escape:IsShown() then
+            self:SetText("")
+            self.currentName = nil
+            addonDB.Widgets.Dialogs.Rename.Frame:Hide()
         end
-    end
-    for k, v in pairs(setups) do
-        if v.Name == widgets.Dialogs.Conflict.config.Name then
-            -- Free all player frames
-            for ek, ev in pairs(v.Players) do 
-                ev.Container:Hide()
-                table.insert(widgets.FreePlayers, ev)
-            end
-            v.Players = {}
-            -- Hide Tab button
-            v.Tab.Button:Hide()
-            -- Free setup
-            table.insert(widgets.FreeSetups, v)
-            table.remove(setups, k)
-            -- Rearrange visible tab buttons
-            local i = 0
-            for ek, ev in pairs(setups) do
-                ev.Tab.Button:SetPoint("TOPLEFT", 3, -3 - 42 * i)
-                i = i + 1
-            end
-            -- Hide freed setup if visible
-            if v.Content:IsShown() then
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Export Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Export = {}
+    addonDB.Widgets.Dialogs.Export.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Export.Frame, 250, 90)
+    addonDB.Widgets.Dialogs.Export.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.Export.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.Export.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Export.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Export.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Export.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Export.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Export Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Export.Header = CreateHeading("EXPORT", GetWidth(addonDB.Widgets.Dialogs.Export.Frame) - 10, addonDB.Widgets.Dialogs.Export.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Export Dialog: Escape Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Export.Escape = CreateLabel("<ESC>: Close", addonDB.Widgets.Dialogs.Export.Frame, 0, 10, color.White, "BOTTOM")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Export Dialog: InputField
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Export.InputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Export.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Export.InputField, GetWidth(addonDB.Widgets.Dialogs.Export.Frame) - 30)
+    SetHeight(addonDB.Widgets.Dialogs.Export.InputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Export.InputField, "TOPLEFT", addonDB.Widgets.Dialogs.Export.Frame, "TOPLEFT", 17, -30)
+    addonDB.Widgets.Dialogs.Export.InputField:SetAutoFocus(true)
+    addonDB.Widgets.Dialogs.Export.InputField:SetMaxLetters(0)
+    addonDB.Widgets.Dialogs.Export.InputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Export.InputField:SetScript("OnEscapePressed", function(self) 
+        if addonDB.Widgets.Dialogs.Export.Frame:IsShown() then
+            self:SetText("")
+            addonDB.Widgets.Dialogs.Export.Frame:Hide()
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Conflict Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Conflict = {}
+    addonDB.Widgets.Dialogs.Conflict.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Conflict.Frame, 250, 80)
+    addonDB.Widgets.Dialogs.Conflict.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.Conflict.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.Conflict.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Conflict.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Conflict.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Conflict.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Conflict.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Conflict Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Conflict.Header = CreateHeading("NAME CONFLICT", GetWidth(addonDB.Widgets.Dialogs.Conflict.Frame) - 10, addonDB.Widgets.Dialogs.Conflict.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Conflict Dialog: Update Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Conflict.Update = {}
+    addonDB.Widgets.Dialogs.Conflict.Update.Button, addonDB.Widgets.Dialogs.Conflict.Update.Text = CreateButton(addonDB.Widgets.Dialogs.Conflict.Frame, "Update", 102, 35, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Conflict.Update.Button, "TOPLEFT", addonDB.Widgets.Dialogs.Conflict.Frame, "TOPLEFT", 15, -30)
+    addonDB.Widgets.Dialogs.Conflict.Update.Button:SetScript("OnClick", function(self)
+        RemoveWithFilter(addonDB.Configs, function(k, v) return v.Name == addonDB.Widgets.Dialogs.Conflict.config.Name end)
+        local key, setup = GetValueByFilter(addonDB.Widgets.Setups, function(k, v) return v.Name == addonDB.Widgets.Dialogs.Conflict.config.Name end)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Free All Player Container
+        -------------------------------------------------------------------------------------------------------------------
+        for ek, ev in pairs(setup.Players) do 
+            ev.Container:Hide()
+            table.insert(addonDB.Widgets.FreePlayers, ev)
+        end
+        setup.Players = {}
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide Tab Button
+        -------------------------------------------------------------------------------------------------------------------
+        setup.Tab.Button:Hide()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Free Setup
+        -------------------------------------------------------------------------------------------------------------------
+        table.insert(addonDB.Widgets.FreeSetups, setup)
+        table.remove(addonDB.Widgets.Setups, key)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Rearrange and Hide
+        -------------------------------------------------------------------------------------------------------------------
+        RearrangeFrames(addonDB.Widgets.Setups, "TOPLEFT", 0, -42, function(v) return v.Tab.Button end, 3, -3)
+        HideFrame(setup.Content)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide all other Setups
+        -------------------------------------------------------------------------------------------------------------------
+        for k, v in pairs(addonDB.Widgets.Setups) do
+            if v.Name ~= addonDB.Widgets.Dialogs.Conflict.config.Name then
                 v.Content:Hide()
+                v.Tab.Button.pushed = false
+                local c = color.LightGray
+                v.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
             end
-            break
         end
-    end
-    -- Hide other setups since new tab is activated by default
-    for k, v in pairs(setups) do
-        if v.Name ~= widgets.Dialogs.Conflict.config.Name then
-            v.Content:Hide()
-            v.Tab.Button.pushed = false
-            local c = color.LightGray
-            v.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Setup new Configuration Entry
+        -------------------------------------------------------------------------------------------------------------------
+        table.insert(addonDB.Configs, addonDB.Widgets.Dialogs.Conflict.config)
+        SetupNewEntry(addonDB.Widgets.Dialogs.Conflict.config, true)
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide Frame
+        -------------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Dialogs.Conflict.config = nil
+        HideFrame(addonDB.Widgets.Dialogs.Conflict.Frame)
+    end)
+    AddHover(addonDB.Widgets.Dialogs.Conflict.Update.Button)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Conflict Dialog: Rename Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Conflict.Rename = {}
+    addonDB.Widgets.Dialogs.Conflict.Rename.Button, addonDB.Widgets.Dialogs.Conflict.Rename.Text = CreateButton(addonDB.Widgets.Dialogs.Conflict.Frame, "Rename", 102, 35, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Conflict.Rename.Button, "TOPRIGHT", addonDB.Widgets.Dialogs.Conflict.Frame, "TOPRIGHT", -15, -30)
+    addonDB.Widgets.Dialogs.Conflict.Rename.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Conflict.Rename.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Conflict.Rename.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Rename.InputField.config = addonDB.Widgets.Dialogs.Conflict.config
+        addonDB.Widgets.Dialogs.Rename.Escape:Hide()
+        addonDB.Widgets.Dialogs.Rename.Frame:Show()
+
+        addonDB.Widgets.Dialogs.Conflict.config = nil
+        addonDB.Widgets.Dialogs.Conflict.Frame:Hide()
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Import Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Import = {}
+    addonDB.Widgets.Dialogs.Import.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Import.Frame, 250, 90)
+    addonDB.Widgets.Dialogs.Import.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.Import.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.Import.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Import.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Import.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Import.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Import.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Import Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Import.Header = CreateHeading("IMPORT", GetWidth(addonDB.Widgets.Dialogs.Import.Frame) - 10, addonDB.Widgets.Dialogs.Import.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Import Dialog: Escape Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Import.Escape = CreateLabel("<ESC>: Cancel", addonDB.Widgets.Dialogs.Import.Frame, 10, 10, color.White, "BOTTOMLEFT")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Import Dialog: Enter Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Import.Enter = CreateLabel("<ENTER>: Confirm", addonDB.Widgets.Dialogs.Import.Frame, -10, 10, color.White, "BOTTOMRIGHT")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Import Dialog: InputField
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Import.InputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Import.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Import.InputField, GetWidth(addonDB.Widgets.Dialogs.Import.Frame) - 30)
+    SetHeight(addonDB.Widgets.Dialogs.Import.InputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Import.InputField, "TOPLEFT", addonDB.Widgets.Dialogs.Import.Frame, "TOPLEFT", 17, -30)
+    addonDB.Widgets.Dialogs.Import.InputField:SetAutoFocus(true)
+    addonDB.Widgets.Dialogs.Import.InputField:SetMaxLetters(0)
+    addonDB.Widgets.Dialogs.Import.InputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Import.InputField:SetScript("OnTextChanged", function(self) 
+        self:SetTextColor(color.White.r, color.White.g, color.White.b)
+    end)
+    addonDB.Widgets.Dialogs.Import.InputField:SetScript("OnEnterPressed", function(self) 
+        local input = self:GetText()
+        if #input == 0 then
+            return
         end
-    end
-    -- Insert and setup new entry
-    table.insert(configs, widgets.Dialogs.Conflict.config)
-    SetupNewEntry(widgets.Dialogs.Conflict.config, true)
 
-    widgets.Dialogs.Conflict.config = nil
-    widgets.Dialogs.Conflict.Frame:Hide()
-end)
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Deserialize String
+        -----------------------------------------------------------------------------------------------------------------------
+        local success, deserialized = DeserializeConfig(self:GetText())
 
------------------------------------------------------------------------------------------------------------------------
--- Conflict Dialog: Rename Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Conflict.Rename = {}
-widgets.Dialogs.Conflict.Rename.Button, widgets.Dialogs.Conflict.Rename.Text = CreateButton(widgets.Dialogs.Conflict.Frame, "Rename", 102, 35, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Conflict.Rename.Button:SetPoint("TOPRIGHT", widgets.Dialogs.Conflict.Frame, "TOPRIGHT", -15, -30)
-widgets.Dialogs.Conflict.Rename.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Conflict.Rename.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Conflict.Rename.Button:SetScript("OnClick", function(self)
-    widgets.Dialogs.Rename.InputField.config = widgets.Dialogs.Conflict.config
-    widgets.Dialogs.Rename.Escape:Hide()
-    widgets.Dialogs.Rename.Frame:Show()
-
-    widgets.Dialogs.Conflict.config = nil
-    widgets.Dialogs.Conflict.Frame:Hide()
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Import Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Import = {}
-widgets.Dialogs.Import.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Import.Frame:SetSize(250, 90)
-widgets.Dialogs.Import.Frame:SetMovable(false)
-widgets.Dialogs.Import.Frame:SetPoint("CENTER")
-widgets.Dialogs.Import.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Import.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Import.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Import.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Import.Frame:Hide()
-
------------------------------------------------------------------------------------------------------------------------
--- Import Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Import.Header = CreateHeading("IMPORT", widgets.Dialogs.Import.Frame:GetWidth() - 10, widgets.Dialogs.Import.Frame, 5, -10, true)
-
------------------------------------------------------------------------------------------------------------------------
--- Import Dialog: Escape Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Import.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.Import.Frame, 10, 10, color.White, "BOTTOMLEFT")
-
------------------------------------------------------------------------------------------------------------------------
--- Import Dialog: Enter Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Import.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.Import.Frame, -10, 10, color.White, "BOTTOMRIGHT")
-
------------------------------------------------------------------------------------------------------------------------
--- Import Dialog: InputField
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Import.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.Import.Frame, "InputBoxTemplate")
-widgets.Dialogs.Import.InputField:SetWidth(widgets.Dialogs.Import.Frame:GetWidth() - 30)
-widgets.Dialogs.Import.InputField:SetHeight(30)
-widgets.Dialogs.Import.InputField:SetPoint("TOPLEFT", widgets.Dialogs.Import.Frame, "TOPLEFT", 17, -30)
-widgets.Dialogs.Import.InputField:SetAutoFocus(true)
-widgets.Dialogs.Import.InputField:SetMaxLetters(0)
-widgets.Dialogs.Import.InputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.Import.InputField:SetScript("OnTextChanged", function(self) 
-    self:SetTextColor(color.White.r, color.White.g, color.White.b)
-end)
-widgets.Dialogs.Import.InputField:SetScript("OnEnterPressed", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
-        -- Deserialize
-        local encoded = self:GetText()
-        local compressed = LibDeflate:DecodeForPrint(encoded)
-        local serialized = LibDeflate:DecompressDeflate(compressed)
-        local success, deserialized = LibSerialize:Deserialize(serialized)
-        -- Change to red if unsuccessful
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Change to Red to signalize Deserialization error
+        -----------------------------------------------------------------------------------------------------------------------
         if not success then
             self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
             return
         end
-        -- Hide frame and reset for next time
-        widgets.Dialogs.Import.Frame:Hide()
+
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Hide and Reset
+        -----------------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Dialogs.Import.Frame:Hide()
         self:SetText("")
-        -- Check if config would override
-        for k, v in pairs(configs) do
-            if v.Name == deserialized.Name then
-                widgets.Dialogs.Conflict.config = deserialized
-                widgets.Dialogs.Conflict.Frame:Show()
-                return
-            end
+
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Check if Config would Override
+        -----------------------------------------------------------------------------------------------------------------------
+        if GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == deserialized.Name end) then
+            addonDB.Widgets.Dialogs.Conflict.config = deserialized
+            addonDB.Widgets.Dialogs.Conflict.Frame:Show()
         end
-        -- Hide other setups since new tab is activated by default
-        for k, v in pairs(setups) do
+
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Hide All Other Setups
+        -----------------------------------------------------------------------------------------------------------------------
+        for k, v in pairs(addonDB.Widgets.Setups) do
             if v.Name ~= deserialized.Name then
                 v.Content:Hide()
                 v.Tab.Button.pushed = false
@@ -2349,1861 +2720,1880 @@ widgets.Dialogs.Import.InputField:SetScript("OnEnterPressed", function(self)
                 v.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
             end
         end
-        -- Insert and setup new entry
-        table.insert(configs, deserialized)
+
+        -----------------------------------------------------------------------------------------------------------------------
+        -- Insert and Activate new Setup
+        -----------------------------------------------------------------------------------------------------------------------
+        table.insert(addonDB.Configs, deserialized)
         SetupNewEntry(deserialized, true)
-    end
-end)
-widgets.Dialogs.Import.InputField:SetScript("OnEscapePressed", function(self) 
-    if widgets.Dialogs.Import.Frame:IsShown() then
-        self:SetText("")
-        widgets.Dialogs.Import.Frame:Hide()
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Activate Raid Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid = {}
-widgets.Dialogs.ActivateRaid.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.ActivateRaid.Frame:SetSize(350, 130)
-widgets.Dialogs.ActivateRaid.Frame:SetMovable(false)
-widgets.Dialogs.ActivateRaid.Frame:SetPoint("TOP", 0, -200)
-widgets.Dialogs.ActivateRaid.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.ActivateRaid.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.ActivateRaid.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.ActivateRaid.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.ActivateRaid.Frame:Hide()
-
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.Header = CreateHeading("RAID TABLES", widgets.Dialogs.ActivateRaid.Frame:GetWidth() - 20, widgets.Dialogs.ActivateRaid.Frame, 5, -10, false, 14)
-
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: Label 
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.Label = CreateLabel("Start tracking by " .. addonName .. " for this group?", widgets.Dialogs.ActivateRaid.Frame, 0, -35, color.White, "TOP", 14)
-widgets.Dialogs.ActivateRaid.Label:SetWidth(widgets.Dialogs.ActivateRaid.Frame:GetWidth() - 20)
-
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: Raid Selection
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.RaidSelection = CreateFrame("Frame", nil, widgets.Dialogs.ActivateRaid.Frame, "UIDropDownMenuTemplate")
-widgets.Dialogs.ActivateRaid.RaidSelection:SetPoint("CENTER", widgets.Dialogs.ActivateRaid.Frame, "CENTER", 35, -10)
-widgets.Dialogs.ActivateRaid.SetupSelection = function()
-    addonDB.Tracking.Name = nil
-    addonDB.Tracking.Active = false
-    UIDropDownMenu_Initialize(widgets.Dialogs.ActivateRaid.RaidSelection, function(self, level)
-        for i, setup in pairs(widgets.Setups) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = setup.Name
-            info.value = setup.Name
-            info.func = function(self) 
-                addonDB.Tracking.Name = setup.Name
-                UIDropDownMenu_SetSelectedID(widgets.Dialogs.ActivateRaid.RaidSelection, i)
-            end
-            UIDropDownMenu_AddButton(info, level)
+    end)
+    addonDB.Widgets.Dialogs.Import.InputField:SetScript("OnEscapePressed", function(self) 
+        if addonDB.Widgets.Dialogs.Import.Frame:IsShown() then
+            self:SetText("")
+            addonDB.Widgets.Dialogs.Import.Frame:Hide()
         end
     end)
-    UIDropDownMenu_SetWidth(widgets.Dialogs.ActivateRaid.RaidSelection, 100)
-    UIDropDownMenu_SetButtonWidth(widgets.Dialogs.ActivateRaid.RaidSelection, widgets.Dialogs.ActivateRaid.Frame:GetWidth() - 192)
-    for i, setup in pairs(widgets.Setups) do
-        if setup.Tab.Button.pushed then
-            addonDB.Tracking.Name = setup.Name
-            UIDropDownMenu_SetSelectedID(widgets.Dialogs.ActivateRaid.RaidSelection, i)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Activate Raid Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid = {}
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.ActivateRaid.Frame, 350, 160)
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.Frame, "TOP", 0, -250)
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.ActivateRaid.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.Header = CreateHeading("RAID TABLES", GetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Frame) - 20, addonDB.Widgets.Dialogs.ActivateRaid.Frame, 5, -10, false, 14)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Label 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.Label = CreateLabel("Start tracking by " .. addonName .. " for this group?", addonDB.Widgets.Dialogs.ActivateRaid.Frame, 0, -35, color.White, "TOP", 14)
+    SetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Label, GetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Frame) - 20)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Sharing
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.Share = {}
+    addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox = CreateFrame("CheckButton", nil, addonDB.Widgets.Dialogs.ActivateRaid.Frame, "ChatConfigCheckButtonTemplate")
+    SetSize(addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox, 24, 24)
+    addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox:SetChecked(false)
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox, "CENTER", -60, -25)
+    addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox:SetScript("OnClick", function(self) 
+        self.EnableShare = self:GetChecked()
+    end)
+
+    addonDB.Widgets.Dialogs.ActivateRaid.Share.Label = CreateLabel("Share Updates", addonDB.Widgets.Dialogs.ActivateRaid.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.Share.Label, "LEFT", addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox, "RIGHT", 10, 1)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Raid Selection
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.ActivateRaid.Frame, "UIDropDownMenuTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER", addonDB.Widgets.Dialogs.ActivateRaid.Frame, "CENTER", 35, 5)
+    addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection = function()
+        DisableTracking()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Setup Dropdown Menu
+        -------------------------------------------------------------------------------------------------------------------
+        UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, function(self, level)
+            for i, setup in pairs(addonDB.Widgets.Setups) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = setup.Name
+                info.value = setup.Name
+                info.func = function(self) 
+                    addonDB.Widgets.Dialogs.ActivateRaid.TrackingName = setup.Name
+                    UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
+                end
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end)
+        UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(100))
+        UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(GetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Frame) - 192))
+
+        local i, setup = GetActiveSetup()
+        if not setup then
+            i, setup = GetFirstValue(addonDB.Widgets.Setups)
         end
+
+        addonDB.Widgets.Dialogs.ActivateRaid.TrackingName = setup.Name
+        UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
+        UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER")
     end
-    UIDropDownMenu_JustifyText(widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER")
-end
 
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: Selection Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.SelectionLabel = CreateLabel("Raid Name:", widgets.Dialogs.ActivateRaid.Frame, -60, -8, color.Gold, "CENTER", 12)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Selection Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.SelectionLabel = CreateLabel("Raid Name:", addonDB.Widgets.Dialogs.ActivateRaid.Frame, -60, 7, color.Gold, "CENTER", 12)
 
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: Yes Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.Yes = {}
-widgets.Dialogs.ActivateRaid.Yes.Button, widgets.Dialogs.ActivateRaid.Yes.Text = CreateButton(widgets.Dialogs.ActivateRaid.Frame, "YES", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.ActivateRaid.Yes.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.ActivateRaid.Frame, "BOTTOMRIGHT", -45, 10)
-widgets.Dialogs.ActivateRaid.Yes.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.ActivateRaid.Yes.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.ActivateRaid.Yes.Button:SetScript("OnClick", function(self)
-    addonDB.Tracking.Active = true
-    for k, v in pairs(setups) do
-        if v.Name == addonDB.Tracking.Name then
-            local c = color.Highlight
-            v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
-        else
-            local c = color.DarkGray
-            v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: Yes Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.Yes = {}
+    addonDB.Widgets.Dialogs.ActivateRaid.Yes.Button, addonDB.Widgets.Dialogs.ActivateRaid.Yes.Text = CreateButton(addonDB.Widgets.Dialogs.ActivateRaid.Frame, "YES", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.Yes.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.ActivateRaid.Frame, "BOTTOMRIGHT", -45, 10)
+    addonDB.Widgets.Dialogs.ActivateRaid.Yes.Button:SetScript("OnClick", function(self)
+        EnableTracking(addonDB.Widgets.Dialogs.ActivateRaid.TrackingName, addonDB.Widgets.Dialogs.ActivateRaid.Share.Checkbox.EnableShare or false)
+
+        for k, v in pairs(addonDB.Widgets.Setups) do
+            if v.Name == addonDB.Tracking.Name then
+                local c = color.Highlight
+                v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
+            else
+                local c = color.DarkGray
+                v.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
+            end
         end
-    end
-    widgets.Dialogs.ActivateRaid.Frame:Hide()
-end)
+        addonDB.Widgets.Dialogs.ActivateRaid.Frame:Hide()
+    end)
+    AddHover(addonDB.Widgets.Dialogs.ActivateRaid.Yes.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Activate Raid Dialog: No Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.ActivateRaid.No = {}
-widgets.Dialogs.ActivateRaid.No.Button, widgets.Dialogs.ActivateRaid.No.Text = CreateButton(widgets.Dialogs.ActivateRaid.Frame, "NO", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.ActivateRaid.No.Button:SetPoint("BOTTOMLEFT", widgets.Dialogs.ActivateRaid.Frame, "BOTTOMLEFT", 45, 10)
-widgets.Dialogs.ActivateRaid.No.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.ActivateRaid.No.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.ActivateRaid.No.Button:SetScript("OnClick", function(self)
-    addonDB.Tracking.Active = false
-    addonDB.Tracking.Name = nil
-    widgets.Dialogs.ActivateRaid.Frame:Hide()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Activate Raid Dialog: No Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.ActivateRaid.No = {}
+    addonDB.Widgets.Dialogs.ActivateRaid.No.Button, addonDB.Widgets.Dialogs.ActivateRaid.No.Text = CreateButton(addonDB.Widgets.Dialogs.ActivateRaid.Frame, "NO", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.No.Button, "BOTTOMLEFT", addonDB.Widgets.Dialogs.ActivateRaid.Frame, "BOTTOMLEFT", 45, 10)
+    addonDB.Widgets.Dialogs.ActivateRaid.No.Button:SetScript("OnClick", function(self)
+        DisableTracking()
+    end)
+    AddHover(addonDB.Widgets.Dialogs.ActivateRaid.No.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Create New Raid Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.NewRaid = {}
-widgets.Dialogs.NewRaid.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.NewRaid.Frame:SetSize(250, 90)
-widgets.Dialogs.NewRaid.Frame:SetMovable(false)
-widgets.Dialogs.NewRaid.Frame:SetPoint("CENTER")
-widgets.Dialogs.NewRaid.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.NewRaid.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.NewRaid.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.NewRaid.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.NewRaid.Frame:Hide()
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create New Raid Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.NewRaid = {}
+    addonDB.Widgets.Dialogs.NewRaid.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.NewRaid.Frame, 250, 90)
+    addonDB.Widgets.Dialogs.NewRaid.Frame:SetMovable(false)
+    SetPoint(addonDB.Widgets.Dialogs.NewRaid.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.NewRaid.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.NewRaid.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.NewRaid.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.NewRaid.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.NewRaid.Frame:Hide()
 
------------------------------------------------------------------------------------------------------------------------
--- New Raid Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.NewRaid.Header = CreateHeading("NEW RAID", widgets.Dialogs.NewRaid.Frame:GetWidth() - 10, widgets.Dialogs.NewRaid.Frame, 5, -10, true)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- New Raid Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.NewRaid.Header = CreateHeading("NEW RAID", GetWidth(addonDB.Widgets.Dialogs.NewRaid.Frame) - 10, addonDB.Widgets.Dialogs.NewRaid.Frame, 5, -10, true)
 
------------------------------------------------------------------------------------------------------------------------
--- New Raid Dialog: Escape Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.NewRaid.Escape = CreateLabel("<ESC>: Cancel", widgets.Dialogs.NewRaid.Frame, 10, 10, color.White, "BOTTOMLEFT")
+    -----------------------------------------------------------------------------------------------------------------------
+    -- New Raid Dialog: Escape Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.NewRaid.Escape = CreateLabel("<ESC>: Cancel", addonDB.Widgets.Dialogs.NewRaid.Frame, 10, 10, color.White, "BOTTOMLEFT")
 
------------------------------------------------------------------------------------------------------------------------
--- New Raid Dialog: Enter Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.NewRaid.Enter = CreateLabel("<ENTER>: Confirm", widgets.Dialogs.NewRaid.Frame, -10, 10, color.White, "BOTTOMRIGHT")
+    -----------------------------------------------------------------------------------------------------------------------
+    -- New Raid Dialog: Enter Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.NewRaid.Enter = CreateLabel("<ENTER>: Confirm", addonDB.Widgets.Dialogs.NewRaid.Frame, -10, 10, color.White, "BOTTOMRIGHT")
 
------------------------------------------------------------------------------------------------------------------------
--- New Raid Dialog: InputField
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.NewRaid.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.NewRaid.Frame, "InputBoxTemplate")
-widgets.Dialogs.NewRaid.InputField:SetWidth(widgets.Dialogs.NewRaid.Frame:GetWidth() - 30)
-widgets.Dialogs.NewRaid.InputField:SetHeight(30)
-widgets.Dialogs.NewRaid.InputField:SetPoint("TOPLEFT", widgets.Dialogs.NewRaid.Frame, "TOPLEFT", 17, -30)
-widgets.Dialogs.NewRaid.InputField:SetAutoFocus(true)
-widgets.Dialogs.NewRaid.InputField:SetMaxLetters(25)
-widgets.Dialogs.NewRaid.InputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.NewRaid.InputField:SetScript("OnTextChanged", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
-        -- Check if name already taken
-        for k, v in pairs(configs) do
-            if v.Name == input then
+    -----------------------------------------------------------------------------------------------------------------------
+    -- New Raid Dialog: InputField
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.NewRaid.InputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.NewRaid.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.NewRaid.InputField, GetWidth(addonDB.Widgets.Dialogs.NewRaid.Frame) - 30)
+    SetHeight(addonDB.Widgets.Dialogs.NewRaid.InputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.NewRaid.InputField, "TOPLEFT", addonDB.Widgets.Dialogs.NewRaid.Frame, "TOPLEFT", 17, -30)
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetAutoFocus(true)
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetMaxLetters(25)
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetScript("OnTextChanged", function(self) 
+        local input = self:GetText()
+        if #input > 0 then
+            -- Check if name already taken
+            local _, config = GetConfigByName(input)
+            if config then
                 self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
-                return
+            else
+                self:SetTextColor(color.White.r, color.White.g, color.White.b)
             end
         end
-        self:SetTextColor(color.White.r, color.White.g, color.White.b)
-    end
-end)
-widgets.Dialogs.NewRaid.InputField:SetScript("OnEnterPressed", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
-        -- Check if name already taken
-        for k, v in pairs(configs) do
-            if v.Name == input then
-                return
-            end
+    end)
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetScript("OnEnterPressed", function(self) 
+        local input = self:GetText()
+        local c = color.Gold
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Return if no input
+        -------------------------------------------------------------------------------------------------------------------
+        if #input == 0 then
+            return
         end
-        -- Create new entry
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Return if COnfig exists
+        -------------------------------------------------------------------------------------------------------------------
+        if GetConfigByName(input) then
+            return
+        end
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Add New Entry
+        -------------------------------------------------------------------------------------------------------------------
         local entry = { 
             ["Name"] = input,
             ["PlayerInfos"] = {}
         }
-        table.insert(configs, entry)
+        table.insert(addonDB.Configs, entry)
         SetupNewEntry(entry, true)
-        -- Hide other setups since new tab is activated by default
-        for k, v in pairs(setups) do
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide all other raid entries
+        -------------------------------------------------------------------------------------------------------------------
+        for k, v in pairs(addonDB.Widgets.Setups) do
             if v.Name ~= entry.Name then
                 v.Content:Hide()
-                local c = color.LightGray
+                local cl = color.LightGray
                 v.Tab.Button.pushed = false
-                v.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+                v.Tab.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
             end
         end
-        widgets.Dialogs.NewRaid.Frame:Hide()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Show Buttons
+        -------------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Export.Button:Show()
+        addonDB.Widgets.Save.Button:Show()
+        addonDB.Widgets.Print.Button:Show()
+        addonDB.Widgets.AddPlayers.Button:Enable()
+        addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
+        addonDB.Widgets.Dialogs.NewRaid.Frame:Hide()
         self:SetText("")
-    end
-end)
-widgets.Dialogs.NewRaid.InputField:SetScript("OnEscapePressed", function(self) 
-    if widgets.Dialogs.NewRaid.Frame:IsShown() then
-        self:SetText("")
-        widgets.Dialogs.NewRaid.Frame:Hide()
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Add Players Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers = {}
-widgets.Dialogs.AddPlayers.PlayerFrames = {}
-widgets.Dialogs.AddPlayers.FreePlayerFrames = {}
-widgets.Dialogs.AddPlayers.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.AddPlayers.Frame:SetSize(470, 350)
-widgets.Dialogs.AddPlayers.Frame:SetMovable(true)
-widgets.Dialogs.AddPlayers.Frame:EnableMouse(true)
-widgets.Dialogs.AddPlayers.Frame:RegisterForDrag("LeftButton")
-widgets.Dialogs.AddPlayers.Frame:SetScript("OnDragStart", widgets.Addon.StartMoving)
-widgets.Dialogs.AddPlayers.Frame:SetScript("OnDragStop", widgets.Addon.StopMovingOrSizing)
-widgets.Dialogs.AddPlayers.Frame:SetPoint("CENTER")
-widgets.Dialogs.AddPlayers.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.AddPlayers.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.AddPlayers.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.AddPlayers.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.AddPlayers.Frame:Hide()
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.Header = CreateHeading("ADD PLAYERS", widgets.Dialogs.AddPlayers.Frame:GetWidth() - 10, widgets.Dialogs.AddPlayers.Frame, 5, -10, true)
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Scroll Area
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.Scroll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.AddPlayers.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.AddPlayers.Scroll :SetPoint("TOPLEFT", 6, -30)
-widgets.Dialogs.AddPlayers.Scroll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", -27, 100)
-widgets.Dialogs.AddPlayers.Scroll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.AddPlayers.Scroll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.AddPlayers.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Scroll View
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.ScrollView = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.Scroll)
-widgets.Dialogs.AddPlayers.ScrollView:SetWidth(widgets.Dialogs.AddPlayers.Scroll:GetWidth())
-widgets.Dialogs.AddPlayers.ScrollView:SetHeight(1)
-
-widgets.Dialogs.AddPlayers.Scroll:SetScrollChild(widgets.Dialogs.AddPlayers.ScrollView)
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Add Callback
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.onAdd = function(self)
-    local input = widgets.Dialogs.AddPlayers.InputField:GetText()
-    if #input > 0 then
-        -- Check if name already taken
-        for k, v in pairs(widgets.Dialogs.AddPlayers.PlayerFrames) do
-            if v.Name:GetText() == input then
-                widgets.Dialogs.AddPlayers.InputField:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
-                return
-            end
+    end)
+    addonDB.Widgets.Dialogs.NewRaid.InputField:SetScript("OnEscapePressed", function(self) 
+        if addonDB.Widgets.Dialogs.NewRaid.Frame:IsShown() then
+            self:SetText("")
+            addonDB.Widgets.Dialogs.NewRaid.Frame:Hide()
         end
-        for k, v in pairs(setups) do
-            if v.Tab.Button.pushed then
-                for _, player in pairs(v.Players) do
-                    if player.PlayerName == input then
-                        self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
-                        return
-                    end
-                end
-                break
-            end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Add Players Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers = {}
+    addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames = {}
+    addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames = {}
+    addonDB.Widgets.Dialogs.AddPlayers.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.AddPlayers.Frame, 470, 350)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetMovable(true)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:EnableMouse(true)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetScript("OnDragStart", addonDB.Widgets.Addon.StartMoving)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetScript("OnDragStop", addonDB.Widgets.Addon.StopMovingOrSizing)
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Frame, "CENTER")
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.AddPlayers.Frame:Hide()
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.Header = CreateHeading("ADD PLAYERS", GetWidth(addonDB.Widgets.Dialogs.AddPlayers.Frame) - 10, addonDB.Widgets.Dialogs.AddPlayers.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Scroll Area
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.Scroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.AddPlayers.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Scroll, "TOPLEFT", 6, -30)
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Scroll, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", Agnostic(-27), 100)
+    addonDB.Widgets.Dialogs.AddPlayers.Scroll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.AddPlayers.Scroll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.AddPlayers.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Scroll View
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.ScrollView = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.Scroll)
+    SetWidth(addonDB.Widgets.Dialogs.AddPlayers.ScrollView, GetWidth(addonDB.Widgets.Dialogs.AddPlayers.Scroll))
+    SetHeight(addonDB.Widgets.Dialogs.AddPlayers.ScrollView, 1)
+
+    addonDB.Widgets.Dialogs.AddPlayers.Scroll:SetScrollChild(addonDB.Widgets.Dialogs.AddPlayers.ScrollView)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Add Callback
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.onAdd = function(self)
+        local input = addonDB.Widgets.Dialogs.AddPlayers.InputField:GetText()
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Return if no input
+        -------------------------------------------------------------------------------------------------------------------
+        if #input == 0 then
+            return
         end
-        -- Create frame
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- If Name Already taken
+        -------------------------------------------------------------------------------------------------------------------
+        if GetValueByFilter(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, function(k, v) return v.Name:GetText() == input end) then
+            addonDB.Widgets.Dialogs.AddPlayers.InputField:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+            return
+        end
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- If Name Already taken
+        -------------------------------------------------------------------------------------------------------------------
+        local setup = GetActiveSetup()
+        if GetValueByFilter(setup.Players, function(k, v) return v.PlayerName == input end) then
+            self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+            return
+        end
+
+        -------------------------------------------------------------------------------------------------------------------
+        -- Create Player Frame
+        -------------------------------------------------------------------------------------------------------------------
         local player = {}
-        player.Class = widgets.Dialogs.AddPlayers.ClassSelection.Class
-        local c = classColor[widgets.Dialogs.AddPlayers.ClassSelection.Class]
-        if #widgets.Dialogs.AddPlayers.FreePlayerFrames > 0 then
-            for k, v in pairs(widgets.Dialogs.AddPlayers.FreePlayerFrames) do
-                player = v
-                player.Container:Show()
-                player.Checkbox:SetChecked(true)
-                player.Name:SetText(input)
-                player.Name:SetTextColor(c.r, c.g, c.b)
-                player.Container:SetPoint("TOPLEFT", 10, -10 + -33 * #widgets.Dialogs.AddPlayers.PlayerFrames)
-                table.insert(widgets.Dialogs.AddPlayers.PlayerFrames, player)
-                table.remove(widgets.Dialogs.AddPlayers.FreePlayerFrames, k)
-                widgets.Dialogs.AddPlayers.ScrollView:SetHeight(20 + 33 * #widgets.Dialogs.AddPlayers.PlayerFrames)
-                break 
-            end
+        local c = classColor[addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class]
+
+        if #addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames > 0 then
+            ---------------------------------------------------------------------------------------------------------------
+            -- Reuse freed frame
+            ---------------------------------------------------------------------------------------------------------------
+            local v = RemoveFirstElement(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames)
+            player = v
+            player.Container:Show()
+            player.Checkbox:SetChecked(true)
+            player.Name:SetText(input)
+            player.Name:SetTextColor(c.r, c.g, c.b)
+            SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
+            table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
+            SetHeight(addonDB.Widgets.Dialogs.AddPlayers.ScrollView, 20 + 33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
         else
-            player.Container = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.ScrollView, "BackdropTemplate")
-            player.Container:SetWidth(widgets.Dialogs.AddPlayers.ScrollView:GetWidth() - 20)
-            player.Container:SetHeight(30)
+            ---------------------------------------------------------------------------------------------------------------
+            -- Create completely new frame
+            ---------------------------------------------------------------------------------------------------------------
+            player.Container = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.ScrollView, "BackdropTemplate")
+            SetWidth(player.Container, GetWidth(addonDB.Widgets.Dialogs.AddPlayers.ScrollView) - 20)
+            SetHeight(player.Container, 30)
             player.Container:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8x8",
                 edgeFile = "Interface\\Buttons\\WHITE8x8",
-                edgeSize = 2,
+                edgeSize = math.max(1, Scaled(2)),
             })
             player.Container:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
             player.Container:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
-            player.Container:SetPoint("TOPLEFT", 10, -10 + -33 * #widgets.Dialogs.AddPlayers.PlayerFrames)
+            SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
             player.Name = CreateLabel(input, player.Container, 100, -9, c)
             player.Checkbox = CreateFrame("CheckButton", nil, player.Container, "ChatConfigCheckButtonTemplate")
-            player.Checkbox:SetSize(24, 24)
+            SetSize(player.Checkbox, 24, 24)
             player.Checkbox:SetChecked(true)
-            player.Checkbox:SetPoint("TOPLEFT", 30, -3)
-            table.insert(widgets.Dialogs.AddPlayers.PlayerFrames, player)
-            player.Container:SetWidth(widgets.Dialogs.AddPlayers.ScrollView:GetWidth() - 20)
+            SetPoint(player.Checkbox, "TOPLEFT", 30, -3)
+            table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
+            SetWidth(player.Container, GetWidth(addonDB.Widgets.Dialogs.AddPlayers.ScrollView) - 20)
         end
-        widgets.Dialogs.AddPlayers.InputField:SetText("")
-    end
-end
 
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: InputField
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.InputField = CreateFrame("EditBox", nil, widgets.Dialogs.AddPlayers.Frame, "InputBoxTemplate")
-widgets.Dialogs.AddPlayers.InputField:SetWidth(200)
-widgets.Dialogs.AddPlayers.InputField:SetHeight(40)
-widgets.Dialogs.AddPlayers.InputField:SetPoint("BOTTOMLEFT", widgets.Dialogs.AddPlayers.Frame, "BOTTOMLEFT", 18, 40)
-widgets.Dialogs.AddPlayers.InputField:SetAutoFocus(false)
-widgets.Dialogs.AddPlayers.InputField:SetMaxLetters(0)
-widgets.Dialogs.AddPlayers.InputField:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-widgets.Dialogs.AddPlayers.InputField:SetScript("OnTextChanged", function(self) 
-    local input = self:GetText()
-    if #input > 0 then
-        -- Check if name already taken
-        for k, v in pairs(widgets.Dialogs.AddPlayers.PlayerFrames) do
-            if v.Name:GetText() == input then
-                widgets.Dialogs.AddPlayers.InputField:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
-                return
-            end
+        player.Class = addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class
+        addonDB.Widgets.Dialogs.AddPlayers.InputField:SetText("")
+    end
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: InputField
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.InputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.AddPlayers.Frame, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.AddPlayers.InputField, 200)
+    SetHeight(addonDB.Widgets.Dialogs.AddPlayers.InputField, 40)
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.InputField, "BOTTOMLEFT", addonDB.Widgets.Dialogs.AddPlayers.Frame, "BOTTOMLEFT", 18, 40)
+    addonDB.Widgets.Dialogs.AddPlayers.InputField:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.AddPlayers.InputField:SetMaxLetters(0)
+    addonDB.Widgets.Dialogs.AddPlayers.InputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.AddPlayers.InputField:SetScript("OnTextChanged", function(self) 
+        local input = self:GetText()
+        if #input == 0 then
+            return
         end
-        for k, v in pairs(setups) do
-            if v.Tab.Button.pushed then
-                for _, player in pairs(v.Players) do
-                    if player.PlayerName == input then
-                        self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
-                        return
-                    end
-                end
-                break
-            end
+
+        if GetValueByFilter(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, function(k, v) return v.Name:GetText() == input end) then
+            addonDB.Widgets.Dialogs.AddPlayers.InputField:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+            return
+        end
+
+        local setup = GetActiveSetup()
+        if GetValueByFilter(setup.Players, function(k, v) return v.PlayerName == input end) then
+            self:SetTextColor(color.Red.r, color.Red.g, color.Red.b)
+            return
         end
         self:SetTextColor(color.White.r, color.White.g, color.White.b)
-    end
-end)
-widgets.Dialogs.AddPlayers.InputField:SetScript("OnEnterPressed", widgets.Dialogs.AddPlayers.onAdd)
+    end)
+    addonDB.Widgets.Dialogs.AddPlayers.InputField:SetScript("OnEnterPressed", addonDB.Widgets.Dialogs.AddPlayers.onAdd)
 
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Input Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.InputLabel = CreateLabel("Enter Player Name:", widgets.Dialogs.AddPlayers.InputField, 0, 10, color.Gold, "TOPLEFT")
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Input Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.InputLabel = CreateLabel("Enter Player Name:", addonDB.Widgets.Dialogs.AddPlayers.InputField, 0, 10, color.Gold, "TOPLEFT")
 
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Class Color Options
------------------------------------------------------------------------------------------------------------------------
-local classColorOptions = {
-    { text = "DEATHKNIGHT", value = "DEATHKNIGHT" },
-    { text = "DEMONHUNTER", value = "DEMONHUNTER" },
-    { text = "DRUID", value = "DRUID" },
-    { text = "EVOKER", value = "EVOKER" },
-    { text = "HUNTER", value = "HUNTER" },
-    { text = "MAGE", value = "MAGE" },
-    { text = "MONK", value = "MONK" },
-    { text = "PALADIN", value = "PALADIN" },
-    { text = "PRIEST", value = "PRIEST" },
-    { text = "ROGUE", value = "ROGUE" },
-    { text = "SHAMAN", value = "SHAMAN" },
-    { text = "WARLOCK", value = "WARLOCK" },
-    { text = "WARRIOR", value = "WARRIOR" },
-}
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Class Color Options
+    -----------------------------------------------------------------------------------------------------------------------
+    local classColorOptions = {
+        { text = "DEATHKNIGHT", value = "DEATHKNIGHT" },
+        { text = "DEMONHUNTER", value = "DEMONHUNTER" },
+        { text = "DRUID", value = "DRUID" },
+        { text = "EVOKER", value = "EVOKER" },
+        { text = "HUNTER", value = "HUNTER" },
+        { text = "MAGE", value = "MAGE" },
+        { text = "MONK", value = "MONK" },
+        { text = "PALADIN", value = "PALADIN" },
+        { text = "PRIEST", value = "PRIEST" },
+        { text = "ROGUE", value = "ROGUE" },
+        { text = "SHAMAN", value = "SHAMAN" },
+        { text = "WARLOCK", value = "WARLOCK" },
+        { text = "WARRIOR", value = "WARRIOR" },
+    }
 
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Class Selection
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.ClassSelection = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.InputField, "UIDropDownMenuTemplate")
-widgets.Dialogs.AddPlayers.ClassSelection:SetPoint("LEFT", widgets.Dialogs.AddPlayers.InputField, "RIGHT", -5, -3)
-widgets.Dialogs.AddPlayers.ClassSelection.Class = classColorOptions[1].value
-UIDropDownMenu_Initialize(widgets.Dialogs.AddPlayers.ClassSelection, function(self, level)
-    for i, option in pairs(classColorOptions) do
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = option.text
-        info.value = option.value
-        info.func = function(self) 
-            widgets.Dialogs.AddPlayers.ClassSelection.Class = option.value
-            UIDropDownMenu_SetSelectedID(widgets.Dialogs.AddPlayers.ClassSelection, i)
-        end
-        UIDropDownMenu_AddButton(info, level)
-    end
-end)
-UIDropDownMenu_SetWidth(widgets.Dialogs.AddPlayers.ClassSelection, 100)
-UIDropDownMenu_SetButtonWidth(widgets.Dialogs.AddPlayers.ClassSelection, 124)
-UIDropDownMenu_SetSelectedID(widgets.Dialogs.AddPlayers.ClassSelection, 1)
-UIDropDownMenu_JustifyText(widgets.Dialogs.AddPlayers.ClassSelection, "LEFT")
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Add Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.Add = {}
-widgets.Dialogs.AddPlayers.Add.Button, widgets.Dialogs.AddPlayers.Add.Text = CreateButton(widgets.Dialogs.AddPlayers.Frame, "Add", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.AddPlayers.Add.Button:SetPoint("LEFT", widgets.Dialogs.AddPlayers.ClassSelection, "RIGHT", -5, 2)
-widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnClick", widgets.Dialogs.AddPlayers.onAdd)
-
------------------------------------------------------------------------------------------------------------------------
--- Add Players Dialog: Confirm Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.AddPlayers.Confirm = {}
-widgets.Dialogs.AddPlayers.Confirm.Button, widgets.Dialogs.AddPlayers.Confirm.Text = CreateButton(widgets.Dialogs.AddPlayers.Frame, "Confirm", 102, 28, color.DarkGray, color.LightGray)
-widgets.Dialogs.AddPlayers.Confirm.Button:SetPoint("BOTTOMRIGHT", widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", -10, 10)
-widgets.Dialogs.AddPlayers.Confirm.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.AddPlayers.Confirm.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.AddPlayers.Confirm.Button:SetScript("OnClick", function(self)
-    -- Create player frames
-    for k, setup in pairs(setups) do
-        if setup.Tab.Button.pushed then
-            local config = nil
-            for _, c in pairs(configs) do
-                if c.Name == setup.Name then
-                    config = c
-                    break
-                end
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Class Selection
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.ClassSelection = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.InputField, "UIDropDownMenuTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "LEFT", addonDB.Widgets.Dialogs.AddPlayers.InputField, "RIGHT", -5, -3)
+    addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class = classColorOptions[1].value
+    UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, function(self, level)
+        for i, option in pairs(classColorOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = option.text
+            info.value = option.value
+            info.func = function(self) 
+                addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class = option.value
+                UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, i)
             end
-            for _, playerFrame in pairs(widgets.Dialogs.AddPlayers.PlayerFrames or {}) do
-                if playerFrame.Checkbox:GetChecked() then
-                    -- Create new entry
-                    local playerInfo = { 
-                        ["Name"] = playerFrame.Name:GetText(),
-                        ["Rare"] = 0,
-                        ["Tier"] = 0,
-                        ["Normal"] = 0,
-                        ["Class"] = playerFrame.Class
-                    }
-                    -- Create Player Frame
-                    local player = {}
-                    for fk, fv in pairs(widgets.FreePlayers) do 
-                        player = fv
-                        player.Container:Show()
-                        player.Container:SetParent(setup.Table)
-                        table.remove(widgets.FreePlayers, fk)
-                        break
-                    end
-                    CreatePlayerFrame(player, config, setup, widgets, setup.Table, playerInfo, setup.Table:GetWidth(), 0, #config.PlayerInfos * -32)
-                    -- Deactive order button
-                    for _, btn in pairs(setup.Order) do
-                        btn.Button:Enable()
-                        btn.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-                    end
-                    -- Insert player data
-                    table.insert(setup.Players, player)
-                    table.insert(config.PlayerInfos, playerInfo)
-                end
-            end
+            UIDropDownMenu_AddButton(info, level)
         end
-    end
-    for _, playerFrame in pairs(widgets.Dialogs.AddPlayers.PlayerFrames or {}) do
-        -- Hide and free
-        playerFrame.Container:Hide()
-        table.insert(widgets.Dialogs.AddPlayers.FreePlayerFrames, playerFrame)
-    end
-    widgets.Dialogs.AddPlayers.PlayerFrames = {}
-    widgets.Dialogs.AddPlayers.Frame:Hide()
-    widgets.Dialogs.AddPlayers.InputField:SetText("")
-end)
+    end)
+    UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(100))
+    UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(124))
+    UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, 1)
+    UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "LEFT")
 
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll = {}
-widgets.Dialogs.Roll.Items = {}
-widgets.Dialogs.Roll.MainSpecRolls = {}
-widgets.Dialogs.Roll.SecondSpecRolls = {}
-widgets.Dialogs.Roll.TransmogRolls = {}
-widgets.Dialogs.Roll.InvalidRolls = {}
-widgets.Dialogs.Roll.FreeRolls = {}
-widgets.Dialogs.Roll.AssignmentList = {}
-widgets.Dialogs.Roll.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Dialogs.Roll.Frame:SetSize(40 + 64 + 20 + 125 + 20 + 125 + 40, 860)
-widgets.Dialogs.Roll.Frame:SetPoint("TOPLEFT", widgets.Addon, "TOPRIGHT", 10, 0)
-widgets.Dialogs.Roll.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Dialogs.Roll.Frame:SetFrameStrata("DIALOG")
-widgets.Dialogs.Roll.Frame:Hide()
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Add Button
+    -----------------------------------------------------------------------------------------------------------------------
+    --addonDB.Widgets.Dialogs.AddPlayers.Add = {}
+    --addonDB.Widgets.Dialogs.AddPlayers.Add.Button, addonDB.Widgets.Dialogs.AddPlayers.Add.Text = CreateButton(addonDB.Widgets.Dialogs.AddPlayers.Frame, "Add", 102, 28, color.DarkGray, color.LightGray)
+    --SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Add.Button, "LEFT", addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "RIGHT", -5, 2)
+    --addonDB.Widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnClick", addonDB.Widgets.Dialogs.AddPlayers.onAdd)
+    --AddHover(addonDB.Widgets.Dialogs.AddPlayers.Add.Button)
 
------------------------------------------------------------------------------------------------------------------------
--- Create Skip Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Skip = {}
-widgets.Dialogs.Roll.Skip.Button, widgets.Dialogs.Roll.Skip.Text = CreateButton(widgets.Dialogs.Roll.Frame, "SKIP", 102, 30, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Skip.Button:SetPoint("BOTTOMRIGHT", -15, 15)
-widgets.Dialogs.Roll.Skip.Button:SetScript("OnEnter", function(self)
-    if widgets.Dialogs.Roll.Roll.Button.rollActive then
-        return
-    end
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Skip.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Skip.Button:SetScript("OnClick", function(self)
-    if widgets.Dialogs.Roll.Roll.Button.rollActive then
-        return
-    end
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Add Players Dialog: Confirm Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.AddPlayers.Confirm = {}
+    addonDB.Widgets.Dialogs.AddPlayers.Confirm.Button, addonDB.Widgets.Dialogs.AddPlayers.Confirm.Text = CreateButton(addonDB.Widgets.Dialogs.AddPlayers.Frame, "Confirm", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Confirm.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.AddPlayers.Frame, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Dialogs.AddPlayers.Confirm.Button:SetScript("OnClick", function(self)
+        local setup = GetActiveSetup()
+        local config = GetActiveConfig()
 
-    widgets.Dialogs.Roll.ActiveItemLink = nil
-    widgets.Dialogs.Roll.TypeSelection = nil
+        -------------------------------------------------------------------------------------------------------------------
+        -- Create Frames for all New Players
+        -------------------------------------------------------------------------------------------------------------------
+        for _, playerFrame in pairs(GetAllWithFilter(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, function(k, v) return v.Checkbox:GetChecked() end) or {}) do
+            -- Create new entry
+            local playerInfo = { 
+                ["Name"] = playerFrame.Name:GetText(),
+                ["Rare"] = 0,
+                ["Tier"] = 0,
+                ["Normal"] = 0,
+                ["Class"] = playerFrame.Class
+            }
+            -- Create Player Frame
+            local player = RemoveFirstElement(addonDB.Widgets.FreePlayers) or {}
+            if player.Container then
+                player.Container:Show()
+                player.Container:SetParent(setup.Table)
+            end
+            CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, #config.PlayerInfos * -32)
+            -- Deactive order button
+            for _, btn in pairs(setup.Order) do
+                btn.Button:Enable()
+                btn.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+            end
+            -- Insert player data
+            table.insert(setup.Players, player)
+            table.insert(config.PlayerInfos, playerInfo)
+        end
 
-    widgets.Dialogs.Roll.Tier.Button.pushed = false
-    widgets.Dialogs.Roll.Tier.Button:Enable()
-    widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        -------------------------------------------------------------------------------------------------------------------
+        -- Free all Frames for next usage
+        -------------------------------------------------------------------------------------------------------------------
+        for _, playerFrame in pairs(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames or {}) do
+            -- Hide and free
+            playerFrame.Container:Hide()
+            table.insert(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames, playerFrame)
+        end
+        addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames = {}
 
-    widgets.Dialogs.Roll.Rare.Button.pushed = false
-    widgets.Dialogs.Roll.Rare.Button:Enable()
-    widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        -------------------------------------------------------------------------------------------------------------------
+        -- Hide Dialog
+        -------------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Dialogs.AddPlayers.Frame:Hide()
+        addonDB.Widgets.Dialogs.AddPlayers.InputField:SetText("")
+    end)
+    AddHover(addonDB.Widgets.Dialogs.AddPlayers.Confirm.Button)
 
-    widgets.Dialogs.Roll.Normal.Button.pushed = false
-    widgets.Dialogs.Roll.Normal.Button:Enable()
-    widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll = {}
+    addonDB.Widgets.Dialogs.Roll.Items = {}
+    addonDB.Widgets.Dialogs.Roll.MainSpecRolls = {}
+    addonDB.Widgets.Dialogs.Roll.SecondSpecRolls = {}
+    addonDB.Widgets.Dialogs.Roll.TransmogRolls = {}
+    addonDB.Widgets.Dialogs.Roll.InvalidRolls = {}
+    addonDB.Widgets.Dialogs.Roll.FreeRolls = {}
+    addonDB.Widgets.Dialogs.Roll.AssignmentList = {}
+    addonDB.Widgets.Dialogs.Roll.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Roll.Frame, 40 + 64 + 20 + 125 + 20 + 125 + 40, 860)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Frame, "TOPLEFT", addonDB.Widgets.Addon, "TOPRIGHT", 10, 0)
+    addonDB.Widgets.Dialogs.Roll.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Dialogs.Roll.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Dialogs.Roll.Frame:Hide()
 
-    widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-    widgets.Dialogs.Roll.AssignmentText:SetText("NO ASSIGNMENT YET")
-    widgets.Dialogs.Roll.AssignmentText:SetTextColor(color.White.r, color.White.g, color.White.b)
-
-    for k, v in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.MainSpecRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.SecondSpecRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.TransmogRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.TransmogRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.InvalidRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.InvalidRolls = {}
-
-    HandleLootAssignment()
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Header = CreateHeading("LOOT", widgets.Dialogs.Roll.Frame:GetWidth() - 10, widgets.Dialogs.Roll.Frame, 5, -10, true)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Player Assignment Field
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Assignment = CreateFrame("Frame", nil, widgets.Dialogs.Roll.Frame, "BackdropTemplate")
-widgets.Dialogs.Roll.Assignment:SetPoint("TOPLEFT", 50, -155)
-widgets.Dialogs.Roll.Assignment:SetSize(widgets.Dialogs.Roll.Frame:GetWidth() - 100, 30)
-widgets.Dialogs.Roll.Assignment:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.Assignment:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Player Assignment Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.AssignmentText = CreateLabel("NO ASSIGNMENT YET", widgets.Dialogs.Roll.Assignment, nil, nil, color.White)
-widgets.Dialogs.Roll.AssignmentText:SetPoint("CENTER")
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog MainSpec Loot Scroll View
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ScrollMainSpecRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("TOPLEFT", 10, -215)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("TOPRIGHT", -32, -215)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetHeight(125)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetPoint("BOTTOMRIGHT", widgets.Dialogs.Roll.Frame, "TOPRIGHT", -38, -335)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-widgets.Dialogs.Roll.ScrollMainSpecRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollMainSpecRoll)
-widgets.Dialogs.Roll.ScrollMainSpecRollView:SetWidth(widgets.Dialogs.Roll.ScrollMainSpecRoll:GetWidth())
-widgets.Dialogs.Roll.ScrollMainSpecRollView:SetHeight(1)
-
-widgets.Dialogs.Roll.ScrollMainSpecRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollMainSpecRollView)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog MainSpec Roll Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.MainSpecRollLabel = CreateLabel("Main Spec Need (100):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Roll.MainSpecRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPLEFT", 5, 5)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog SecondSpec Loot Scroll View
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ScrollSecondSpecRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMLEFT", 0, -30)
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMRIGHT", 0, -30)
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetHeight(125)
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-widgets.Dialogs.Roll.ScrollSecondSpecRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollSecondSpecRoll)
-widgets.Dialogs.Roll.ScrollSecondSpecRollView:SetWidth(widgets.Dialogs.Roll.ScrollSecondSpecRoll:GetWidth())
-widgets.Dialogs.Roll.ScrollSecondSpecRollView:SetHeight(1)
-
-widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollSecondSpecRollView)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog MainSpec Roll Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.SecondSpecRollLabel = CreateLabel("Second Spec Rolls (50):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Roll.SecondSpecRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "TOPLEFT", 5, 5)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Transmog Loot Scroll View
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ScrollTransmogRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMLEFT", 0, -30)
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMRIGHT", 0, -30)
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetHeight(125)
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-widgets.Dialogs.Roll.ScrollTransmogRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollTransmogRoll)
-widgets.Dialogs.Roll.ScrollTransmogRollView:SetWidth(widgets.Dialogs.Roll.ScrollTransmogRoll:GetWidth())
-widgets.Dialogs.Roll.ScrollTransmogRollView:SetHeight(1)
-
-widgets.Dialogs.Roll.ScrollTransmogRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollTransmogRollView)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog MainSpec Roll Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.TransmogRollLabel = CreateLabel("Transmog Rolls (25):", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Roll.TransmogRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollTransmogRoll, "TOPLEFT", 5, 5)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Invalid Loot Scroll View
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ScrollInvalidRoll = CreateFrame("ScrollFrame", nil, widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetPoint("TOPLEFT", widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMLEFT", 0, -30)
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetPoint("TOPRIGHT", widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMRIGHT", 0, -30)
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetHeight(125)
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
-widgets.Dialogs.Roll.ScrollInvalidRollView = CreateFrame("Frame", nil, widgets.Dialogs.Roll.ScrollInvalidRoll)
-widgets.Dialogs.Roll.ScrollInvalidRollView:SetWidth(widgets.Dialogs.Roll.ScrollInvalidRoll:GetWidth())
-widgets.Dialogs.Roll.ScrollInvalidRollView:SetHeight(1)
-
-widgets.Dialogs.Roll.ScrollInvalidRoll:SetScrollChild(widgets.Dialogs.Roll.ScrollInvalidRollView)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog MainSpec Roll Label
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.InvalidRollLabel = CreateLabel("Invalid Rolls:", widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
-widgets.Dialogs.Roll.InvalidRollLabel:SetPoint("BOTTOMLEFT", widgets.Dialogs.Roll.ScrollInvalidRoll, "TOPLEFT", 5, 5)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Item Icon
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ItemIcon = CreateFrame("Frame", nil, widgets.Dialogs.Roll.Frame, "BackdropTemplate")
-widgets.Dialogs.Roll.ItemIcon:SetSize(64, 64)
-widgets.Dialogs.Roll.ItemIcon:SetPoint("TOPLEFT", 40, -40)
-widgets.Dialogs.Roll.ItemIcon:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Dialogs.Roll.ItemIcon:SetBackdropColor(0, 0, 0, 1)
-widgets.Dialogs.Roll.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-
------------------------------------------------------------------------------------------------------------------------
--- Create Roll Dialog Item Texture
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.ItemTexture = widgets.Dialogs.Roll.ItemIcon:CreateTexture(nil, "ARTWORK")
-widgets.Dialogs.Roll.ItemTexture:SetAllPoints()
-widgets.Dialogs.Roll.ActiveItemLink = nil
-local itemTexture = select(10, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
-widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Roll Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Roll = {}
-widgets.Dialogs.Roll.Roll.Button, widgets.Dialogs.Roll.Roll.Text = CreateButton(widgets.Dialogs.Roll.Frame, "START ROLL", 125, 40, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Roll.Button:SetPoint("LEFT", widgets.Dialogs.Roll.ItemIcon, "RIGHT", 20, 0)
-widgets.Dialogs.Roll.Roll.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Roll.Button:SetScript("OnLeave", function(self)
-    if self.rollActive then
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Skip Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Skip = {}
+    addonDB.Widgets.Dialogs.Roll.Skip.Button, addonDB.Widgets.Dialogs.Roll.Skip.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "SKIP", 102, 30, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Skip.Button, "BOTTOMRIGHT", -15, 15)
+    addonDB.Widgets.Dialogs.Roll.Skip.Button:SetScript("OnEnter", function(self)
+        if addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive then
+            return
+        end
         local c = color.Gold
         self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    else
+    end)
+    addonDB.Widgets.Dialogs.Roll.Skip.Button:SetScript("OnLeave", function(self)
         local c = color.LightGray
         self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    end
-end)
-widgets.Dialogs.Roll.Roll.Button:SetScript("OnClick", function(self)
-    local channel = "RAID"
-    if addonDB.Testing then
-        channel = "WHISPER"
-    end
-    if self.rollActive then
-        self.rollActive = false
-        local itemLink = widgets.Dialogs.Roll.ActiveItemLink
-        local msg = "---- FINISHED ROLL OF " .. itemLink .. " ----"
-        SendChatMessage(msg, channel, nil, UnitName("player"))
-        widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-        widgets.Dialogs.Roll.Roll.Text:SetText("START ROLL")
-    else
-        self.rollActive = true
-        local itemLink = widgets.Dialogs.Roll.ActiveItemLink
-        local msg = "----    START ROLL OF " .. itemLink .. " ----"
-        SendChatMessage(msg, channel, nil, UnitName("player"))
-        widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-        widgets.Dialogs.Roll.Roll.Text:SetText("STOP ROLL")
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Roll CHAT_MSG_SYSTEM Handling
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Frame:RegisterEvent("CHAT_MSG_SYSTEM")
-widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
-    if event ~= "CHAT_MSG_SYSTEM" or message == nil or not widgets.Dialogs.Roll.Roll.Button.rollActive then
-        return
-    end
-    -- Get data from message
-    local colour = nil
-    local class = nil
-    local rollPattern = "^(.+)%-(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
-    local name, realm, rollValue, min, max = message:match(rollPattern)
-    if name then
-        class = select(2, UnitClass(name .. "-" .. realm))
-        colour = classColor[class]
-    else
-        rollPattern = "^(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
-        name, rollValue, min, max = message:match(rollPattern)
-        if not name then
+    end)
+    addonDB.Widgets.Dialogs.Roll.Skip.Button:SetScript("OnClick", function(self)
+        if addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive then
             return
         end
-        class = select(2, UnitClass(name))
-        colour = classColor[class]
-        realm = select(2, UnitFullName("player"))
-    end
-    -- Get as numbers
-    rollValue = tonumber(rollValue)
-    min = tonumber(min)
-    max = tonumber(max)
 
-    -- Get associated rolls and frame
-    local rolls = widgets.Dialogs.Roll.InvalidRolls
-    local scrollView = widgets.Dialogs.Roll.ScrollInvalidRollView
-    if max == 100 then
-        rolls = widgets.Dialogs.Roll.MainSpecRolls
-        scrollView = widgets.Dialogs.Roll.ScrollMainSpecRollView
-    elseif max == 50 then
-        rolls = widgets.Dialogs.Roll.SecondSpecRolls
-        scrollView = widgets.Dialogs.Roll.ScrollSecondSpecRollView
-    elseif max == 25 then
-        rolls = widgets.Dialogs.Roll.TransmogRolls
-        scrollView = widgets.Dialogs.Roll.ScrollTransmogRollView
-    end
+        addonDB.Widgets.Dialogs.Roll.ActiveItemLink = nil
+        addonDB.Widgets.Dialogs.Roll.TypeSelection = nil
 
-    local roll = nil
+        addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Tier.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
-    -- Prevent players from rolling more than once
-    local fullName = name .. "-" .. realm
-    for k, v in pairs(rolls) do
-        if v.PlayerLabel:GetText() == fullName then
-            return
+        addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Rare.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+        addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Normal.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+        addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText("NO ASSIGNMENT YET")
+        addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(color.White.r, color.White.g, color.White.b)
+
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
         end
-    end
-    
-    -- Create frame for player roll
-    if #widgets.Dialogs.Roll.FreeRolls > 0 then
-        for k, v in pairs(widgets.Dialogs.Roll.FreeRolls) do
-            roll = v
-            table.remove(widgets.Dialogs.Roll.FreeRolls, k)
-            break
-        end
-        roll.Frame:SetParent(scrollView)
-        roll.Frame:Show()
-    else
-        roll = {}
-        roll.Frame = CreateFrame("Button", nil, scrollView, "BackdropTemplate")
-        roll.Frame:SetSize(scrollView:GetWidth() - 20, 30)
-        roll.Frame:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 2,
-        })
-        roll.Frame:SetBackdropColor(0, 0, 0, 1)
-        roll.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
-        roll.Frame:SetScript("OnEnter", function(self) end)
-        roll.Frame:SetScript("OnLeave", function(self)
-            local c = color.LightGray
-            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        end)
+        addonDB.Widgets.Dialogs.Roll.MainSpecRolls = {}
 
-        roll.PlayerLabel = CreateLabel(name .. "-" .. realm, roll.Frame, 10, -10, colour)
-        roll.RollLabel = CreateLabel("Roll:", roll.Frame, 200, -10, color.White)
-        roll.PriorityLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
-        roll.Add = {}
-        roll.Add.Button, roll.Add.Text = CreateButton(roll.Frame, "ADD", 70, 25, color.DarkGray, color.LightGray, color.Gold)
-        roll.Add.Button:SetPoint("RIGHT", -10, 0)
-        roll.Add.Button:SetScript("OnEnter", function(self)
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.SecondSpecRolls = {}
+
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.TransmogRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.TransmogRolls = {}
+
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.InvalidRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.InvalidRolls = {}
+
+        HandleLootAssignment()
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Header = CreateHeading("LOOT", GetWidth(addonDB.Widgets.Dialogs.Roll.Frame) - 10, addonDB.Widgets.Dialogs.Roll.Frame, 5, -10, true)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Player Assignment Field
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Assignment = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Assignment, "TOPLEFT", 50, -155)
+    SetSize(addonDB.Widgets.Dialogs.Roll.Assignment, GetWidth(addonDB.Widgets.Dialogs.Roll.Frame) - 100, 30)
+    addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Player Assignment Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.AssignmentText = CreateLabel("NO ASSIGNMENT YET", addonDB.Widgets.Dialogs.Roll.Assignment, nil, nil, color.White)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.AssignmentText, "CENTER")
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog MainSpec Loot Scroll View
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPLEFT", 10, -215)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPRIGHT", -32, -215)
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, 125)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Roll.Frame, "TOPRIGHT", Agnostic(-27) - 11, -335)
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRollView = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll)
+    SetWidth(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRollView, GetWidth(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll))
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRollView, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll:SetScrollChild(addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRollView)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog MainSpec Roll Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.MainSpecRollLabel = CreateLabel("Main Spec Need (100):", addonDB.Widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.MainSpecRollLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "TOPLEFT", 5, 5)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog SecondSpec Loot Scroll View
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, "TOPLEFT", addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMLEFT", 0, -30)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, "TOPRIGHT", addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRoll, "BOTTOMRIGHT", 0, -30)
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, 125)
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRollView = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll)
+    SetWidth(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRollView, GetWidth(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll))
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRollView, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll:SetScrollChild(addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRollView)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog MainSpec Roll Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.SecondSpecRollLabel = CreateLabel("Second Spec Rolls (50):", addonDB.Widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.SecondSpecRollLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, "TOPLEFT", 5, 5)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Transmog Loot Scroll View
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, "TOPLEFT", addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMLEFT", 0, -30)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, "TOPRIGHT", addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRoll, "BOTTOMRIGHT", 0, -30)
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, 125)
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRollView = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll)
+    SetWidth(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRollView, GetWidth(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll))
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRollView, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll:SetScrollChild(addonDB.Widgets.Dialogs.Roll.ScrollTransmogRollView)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog MainSpec Roll Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.TransmogRollLabel = CreateLabel("Transmog Rolls (25):", addonDB.Widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.TransmogRollLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, "TOPLEFT", 5, 5)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Invalid Loot Scroll View
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll, "TOPLEFT", addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMLEFT", 0, -30)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll, "TOPRIGHT", addonDB.Widgets.Dialogs.Roll.ScrollTransmogRoll, "BOTTOMRIGHT", 0, -30)
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll, 125)
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRollView = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll)
+    SetWidth(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRollView, GetWidth(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll))
+    SetHeight(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRollView, 1)
+
+    addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll:SetScrollChild(addonDB.Widgets.Dialogs.Roll.ScrollInvalidRollView)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog MainSpec Roll Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.InvalidRollLabel = CreateLabel("Invalid Rolls:", addonDB.Widgets.Dialogs.Roll.Frame, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.InvalidRollLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Roll.ScrollInvalidRoll, "TOPLEFT", 5, 5)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Item Icon
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ItemIcon = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Roll.Frame, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Dialogs.Roll.ItemIcon, 64, 64)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.ItemIcon, "TOPLEFT", 40, -40)
+    addonDB.Widgets.Dialogs.Roll.ItemIcon:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Roll.ItemIcon:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Dialogs.Roll.ItemIcon:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Roll Dialog Item Texture
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.ItemTexture = addonDB.Widgets.Dialogs.Roll.ItemIcon:CreateTexture(nil, "ARTWORK")
+    addonDB.Widgets.Dialogs.Roll.ItemTexture:SetAllPoints()
+    addonDB.Widgets.Dialogs.Roll.ActiveItemLink = nil
+    local itemTexture = select(10, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
+    addonDB.Widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Roll Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Roll = {}
+    addonDB.Widgets.Dialogs.Roll.Roll.Button, addonDB.Widgets.Dialogs.Roll.Roll.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "START ROLL", 125, 40, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Roll.Button, "LEFT", addonDB.Widgets.Dialogs.Roll.ItemIcon, "RIGHT", 20, 0)
+    addonDB.Widgets.Dialogs.Roll.Roll.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Roll.Button:SetScript("OnLeave", function(self)
+        if self.rollActive then
             local c = color.Gold
             self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        end)
-        roll.Add.Button:SetScript("OnLeave", function(self)
+        else
             local c = color.LightGray
             self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-        end)
-    end
+        end
+    end)
+    addonDB.Widgets.Dialogs.Roll.Roll.Button:SetScript("OnClick", function(self)
+        local itemLink = addonDB.Widgets.Dialogs.Roll.ActiveItemLink
 
-    if max == 100 or (#widgets.Dialogs.Roll.MainSpecRolls == 0 and max == 50) or (#widgets.Dialogs.Roll.MainSpecRolls == 0 and #widgets.Dialogs.Roll.SecondSpecRolls == 0 and max == 25) then
-        roll.Frame:SetScript("OnEnter", function(self)
-            if not widgets.Dialogs.Roll.Roll.Button.rollActive then
-                local c = color.Gold
-                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        if self.rollActive then
+            self.rollActive = false
+            local msg = "---- FINISHED ROLL OF " .. itemLink .. " ----"
+            SendChatMessage(msg, (addonDB.Testing and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
+            addonDB.Widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+            addonDB.Widgets.Dialogs.Roll.Roll.Text:SetText("START ROLL")
+        else
+            self.rollActive = true
+            local msg = "----    START ROLL OF " .. itemLink .. " ----"
+            SendChatMessage(msg, (addonDB.Testing and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
+            addonDB.Widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            addonDB.Widgets.Dialogs.Roll.Roll.Text:SetText("STOP ROLL")
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Roll CHAT_MSG_SYSTEM Handling
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Frame:RegisterEvent("CHAT_MSG_SYSTEM")
+    addonDB.Widgets.Dialogs.Roll.Frame:SetScript("OnEvent", function(self, event, message)
+        if event ~= "CHAT_MSG_SYSTEM" or message == nil or not addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive then
+            return
+        end
+        -- Get data from message
+        local colour = nil
+        local class = nil
+        local rollPattern = "^(.+)%-(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
+        local name, realm, rollValue, min, max = message:match(rollPattern)
+        if name then
+            class = select(2, UnitClass(name .. "-" .. realm))
+            colour = classColor[class]
+        else
+            rollPattern = "^(.+) rolls (%d+) %((%d+)%-(%d+)%)$"
+            name, rollValue, min, max = message:match(rollPattern)
+            if not name then
+                return
             end
+            class = select(2, UnitClass(name))
+            colour = classColor[class]
+            realm = select(2, UnitFullName("player"))
+        end
+        -- Get as numbers
+        rollValue = tonumber(rollValue)
+        min = tonumber(min)
+        max = tonumber(max)
+
+        -- Get associated rolls and frame
+        local rolls = addonDB.Widgets.Dialogs.Roll.InvalidRolls
+        local scrollView = addonDB.Widgets.Dialogs.Roll.ScrollInvalidRollView
+        if max == 100 then
+            rolls = addonDB.Widgets.Dialogs.Roll.MainSpecRolls
+            scrollView = addonDB.Widgets.Dialogs.Roll.ScrollMainSpecRollView
+        elseif max == 50 then
+            rolls = addonDB.Widgets.Dialogs.Roll.SecondSpecRolls
+            scrollView = addonDB.Widgets.Dialogs.Roll.ScrollSecondSpecRollView
+        elseif max == 25 then
+            rolls = addonDB.Widgets.Dialogs.Roll.TransmogRolls
+            scrollView = addonDB.Widgets.Dialogs.Roll.ScrollTransmogRollView
+        end
+
+        local roll = nil
+
+        -- Prevent players from rolling more than once
+        local fullName = name .. "-" .. realm
+        if GetValueByFilter(rolls, function(k, v) return v.PlayerLabel:GetText() == fullName end) then
+            return
+        end
+        
+        -- Create frame for player roll
+        if #addonDB.Widgets.Dialogs.Roll.FreeRolls > 0 then
+            roll = RemoveFirstElement(addonDB.Widgets.Dialogs.Roll.FreeRolls)
+            roll.Frame:SetParent(scrollView)
+            roll.Frame:Show()
+        else
+            roll = {}
+            roll.Frame = CreateFrame("Button", nil, scrollView, "BackdropTemplate")
+            SetSize(roll.Frame, GetWidth(scrollView) - 20, 30)
+            roll.Frame:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8x8",
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                edgeSize = math.max(1, Scaled(2)),
+            })
+            roll.Frame:SetBackdropColor(0, 0, 0, 1)
+            roll.Frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+            roll.Frame:SetScript("OnEnter", function(self) end)
+            roll.Frame:SetScript("OnLeave", function(self)
+                local c = color.LightGray
+                self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            end)
+
+            roll.PlayerLabel = CreateLabel(name .. "-" .. realm, roll.Frame, 10, -10, colour)
+            roll.RollLabel = CreateLabel("Roll:", roll.Frame, 200, -10, color.White)
+            roll.PriorityLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
+            roll.Add = {}
+            roll.Add.Button, roll.Add.Text = CreateButton(roll.Frame, "ADD", 70, 25, color.DarkGray, color.LightGray, color.Gold)
+            SetPoint(roll.Add.Button, "RIGHT", -10, 0)
+            AddHover(roll.Add.Button)
+        end
+
+        if max == 100 or (#addonDB.Widgets.Dialogs.Roll.MainSpecRolls == 0 and max == 50) or (#addonDB.Widgets.Dialogs.Roll.MainSpecRolls == 0 and #addonDB.Widgets.Dialogs.Roll.SecondSpecRolls == 0 and max == 25) then
+            roll.Frame:SetScript("OnEnter", function(self)
+                if not addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive then
+                    local c = color.Gold
+                    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+                end
+            end)
+            roll.Frame:SetScript("OnClick", function(self)
+                if not addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive then
+                    addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
+                    addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                    addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                    addonDB.Widgets.Dialogs.Roll.Class = class
+                    -- Only count main rolls
+                    if max == 100 then
+                        addonDB.Widgets.Dialogs.Roll.RollType = "MainSpecRoll"
+                    elseif max == 50 then
+                        addonDB.Widgets.Dialogs.Roll.RollType = "SecondSpecRoll"
+                    elseif max == 25 then
+                        addonDB.Widgets.Dialogs.Roll.RollType = "TransmogRoll"
+                    else
+                        addonDB.Widgets.Dialogs.Roll.RollType = "InvalidRoll"
+                    end
+                end
+            end)
+        else
+            roll.Frame:SetScript("OnEnter", function(self) end)
+            roll.Frame:SetScript("OnClick", function(self) end)
+        end
+
+        roll.Priority = 0
+        roll.PlayerLabel:SetText(name .. "-" .. realm)
+        roll.PlayerLabel:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+        roll.RollLabel:SetText("Roll: " .. rollValue)
+
+        local playerFound = false
+        local orderName = nil
+
+        local v = GetValueByFilter(addonDB.Widgets.Setups, function(k, v) return v.Name == addonDB.Tracking.Name end)
+        local p = GetValueByFilter(v.Players, function(k, v) return v.PlayerName == fullName end)
+
+        if p then
+            if max == 100 and addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed then
+                local num = tonumber(p.TierText:GetText()) + tonumber(p.TierDiffText:GetText())
+                roll.Priority = num
+                roll.PriorityLabel:SetText("Prio: "..num)
+                roll.PriorityLabel:Show()
+                orderName = "Tier Low"
+            elseif max == 100 and addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed then
+                local num = tonumber(p.RareText:GetText()) + tonumber(p.RareDiffText:GetText())
+                roll.Priority = num
+                roll.PriorityLabel:SetText("Prio: "..num)
+                roll.PriorityLabel:Show()
+                orderName = "Rare Low"
+            elseif max == 100 and addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed then
+                local num = tonumber(p.NormalText:GetText()) + tonumber(p.NormalDiffText:GetText())
+                roll.Priority = num
+                roll.PriorityLabel:SetText("Prio: "..num)
+                roll.PriorityLabel:Show()
+                orderName = "Normal Low"
+            else
+                roll.PriorityLabel:SetText("")
+                roll.PriorityLabel:Hide()
+            end
+            roll.Add.Button:Hide()
+            playerFound = true
+        end
+
+        -- Player missing in setup
+        if not playerFound then
+            roll.Priority = -1
+            -- Hide label
+            roll.PriorityLabel:SetText("")
+            roll.PriorityLabel:Hide()
+            -- Show button
+            roll.Add.Button:Show()
+            roll.Add.Button:SetScript("OnClick", function(self)
+                -- Add player frame
+                local setup = GetActiveSetup()
+                local config = GetActiveConfig()
+
+                -- Create new entry
+                local playerInfo = { 
+                    ["Name"] = fullName,
+                    ["Rare"] = 0,
+                    ["Tier"] = 0,
+                    ["Normal"] = 0,
+                    ["Class"] = class
+                }
+
+                -- Create Player Frame
+                local player = RemoveFirstElement(addonDB.Widgets.FreePlayers) or {}
+                if player.Container then
+                    player.Container:Show()
+                    player.Container:SetParent(setup.Table)
+                end
+                CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, #config.PlayerInfos * -32)
+
+                -- Insert player data
+                table.insert(setup.Players, player)
+                table.insert(config.PlayerInfos, playerInfo)
+
+                -- Sort by order
+                if orderName then
+                    local v = GetValueByFilter(orderConfigs, function(k, v) return v.Name == orderName end)
+                    table.sort(setup.Players, v["Callback"])
+                    local vOffset = 0
+                    local sortedOrder = {}
+                    for i, p in pairs(setup.Players) do
+                        sortedOrder[p.PlayerName] = i
+                        SetPoint(p.Container, "TOPLEFT", 0, vOffset)
+                        vOffset = vOffset - 32
+                    end
+                    SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+                    table.sort(config["PlayerInfos"], function(a, b)
+                        return sortedOrder[a.Name] < sortedOrder[b.Name]
+                    end)
+                end
+
+                -- Remove add button
+                local r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                if r then
+                    r.Add.Button:Hide()
+                    r.Priority = 0
+                    if addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed or addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed or addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed then
+                        r.PriorityLabel:SetText("Prio: 0")
+                        r.PriorityLabel:Show()
+                    end
+
+                    table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                        if a.Priority == nil and b.Priority == nil then
+                            return a.Value > b.Value
+                        end
+                        if a.Priority == nil then
+                            return false 
+                        end
+                        if b.Priority == nil then
+                            return true 
+                        end
+                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                    end)
+                    RearrangeFrames(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, "TOPLEFT", 0, -32, function(f) return f.Frame end, 0, -5)
+                end
+
+                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                if r then
+                    r.Add.Button:Hide()
+                end
+
+                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.TransmogRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                if r then
+                    r.Add.Button:Hide()
+                end
+
+                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.InvalidRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                if r then
+                    r.Add.Button:Hide()
+                end
+            end)
+        end
+
+        roll.Value = rollValue
+
+        table.insert(rolls, roll)
+        table.sort(rolls, function(a, b) 
+            if a.Priority == nil and b.Priority == nil then
+                return a.Value > b.Value
+            end
+            if a.Priority == nil then
+                return false 
+            end
+            if b.Priority == nil then
+                return true 
+            end
+            return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
         end)
-        roll.Frame:SetScript("OnClick", function(self)
-            if not widgets.Dialogs.Roll.Roll.Button.rollActive then
-                widgets.Dialogs.Roll.AssignmentText:SetText(fullName)
-                widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
-                widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-                widgets.Dialogs.Roll.Class = class
-                -- Only count main rolls
-                if max == 100 then
-                    widgets.Dialogs.Roll.RollType = "MainSpecRoll"
-                elseif max == 50 then
-                    widgets.Dialogs.Roll.RollType = "SecondSpecRoll"
-                elseif max == 25 then
-                    widgets.Dialogs.Roll.RollType = "TransmogRoll"
-                else
-                    widgets.Dialogs.Roll.RollType = "InvalidRoll"
+
+        RearrangeFrames(rolls, "TOPLEFT", 0, -32, function(v) return v.Frame end, 0, -5)
+
+        if #addonDB.Widgets.Dialogs.Roll.MainSpecRolls > 0 then
+            for _, r in pairs(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls) do
+                r.Frame:SetScript("OnClick", function(self) end)
+                r.Frame:SetScript("OnEnter", function(self) end)
+            end
+        end
+
+        if #addonDB.Widgets.Dialogs.Roll.MainSpecRolls > 0 or #addonDB.Widgets.Dialogs.Roll.SecondSpecRolls > 0 then
+            for _, r in pairs(addonDB.Widgets.Dialogs.Roll.TransmogRolls) do
+                r.Frame:SetScript("OnClick", function(self) end)
+                r.Frame:SetScript("OnEnter", function(self) end)
+            end
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Tier Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Tier = {}
+    addonDB.Widgets.Dialogs.Roll.Tier.Button, addonDB.Widgets.Dialogs.Roll.Tier.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "TIER", 102, 25, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Tier.Button, "TOP", 0, -120)
+    addonDB.Widgets.Dialogs.Roll.Tier.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Tier.Button:SetScript("OnLeave", function(self)
+        if self.pushed then
+            local c = color.Gold
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        else
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    addonDB.Widgets.Dialogs.Roll.Tier.Button:SetScript("OnClick", function(self)
+        if not self.pushed then
+            self.pushed = true
+            self:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Tier"
+            self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed = false
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed = false
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+            local setup = GetActiveSetup()
+            local c = color.Gold
+            -- Set orderButton active and update order
+            setup.Order["Tier Low"].Button.pushed = true
+            setup.Order["Tier Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            setup.Order["Tier Low"].Button:Disable()
+
+            -- update order of rolls
+            for _, roll in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                -- Update priorities in rolls
+                for _, player in pairs(setup.Players) do
+                    if player.PlayerName == roll.PlayerLabel:GetText() then
+                        local num = tonumber(player.TierText:GetText()) + tonumber(player.TierDiffText:GetText())
+                        roll.Priority = num
+                        roll.PriorityLabel:SetText("Prio: ".. num)
+                        roll.PriorityLabel:Show()
+                        break
+                    end
                 end
             end
-        end)
-    else
-        roll.Frame:SetScript("OnEnter", function(self) end)
-        roll.Frame:SetScript("OnClick", function(self) end)
-    end
 
-    roll.Priority = 0
-    roll.PlayerLabel:SetText(name .. "-" .. realm)
-    roll.PlayerLabel:SetTextColor(colour.r, colour.g, colour.b, colour.a)
-    roll.RollLabel:SetText("Roll: " .. rollValue)
+            table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                if a.Priority == nil and b.Priority == nil then
+                    return a.Value > b.Value
+                end
+                if a.Priority == nil then
+                    return false 
+                end
+                if b.Priority == nil then
+                    return true 
+                end
+                return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+            end)
 
-    local orderName = nil
-    for _, v in pairs(widgets.Setups) do
-        if v.Name == addonDB.Tracking.Name then
-            local playerFound = false
-            for _, p in pairs(v.Players) do
-                if p.PlayerName == fullName then
-                    if max == 100 and widgets.Dialogs.Roll.Tier.Button.pushed then
-                        local num = tonumber(p.TierText:GetText()) + tonumber(p.TierDiffText:GetText())
-                        roll.Priority = num
-                        roll.PriorityLabel:SetText("Prio: "..num)
-                        roll.PriorityLabel:Show()
-                        orderName = "Tier Low"
-                    elseif max == 100 and widgets.Dialogs.Roll.Rare.Button.pushed then
-                        local num = tonumber(p.RareText:GetText()) + tonumber(p.RareDiffText:GetText())
-                        roll.Priority = num
-                        roll.PriorityLabel:SetText("Prio: "..num)
-                        roll.PriorityLabel:Show()
-                        orderName = "Rare Low"
-                    elseif max == 100 and widgets.Dialogs.Roll.Normal.Button.pushed then
-                        local num = tonumber(p.NormalText:GetText()) + tonumber(p.NormalDiffText:GetText())
-                        roll.Priority = num
-                        roll.PriorityLabel:SetText("Prio: "..num)
-                        roll.PriorityLabel:Show()
-                        orderName = "Normal Low"
-                    else
-                        roll.PriorityLabel:SetText("")
-                        roll.PriorityLabel:Hide()
-                    end
-                    roll.Add.Button:Hide()
-                    playerFound = true
+            local vOffset = -5
+            for _, r in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                SetPoint(r.Frame, "TOPLEFT", 10, vOffset)
+                vOffset = vOffset - 32
+            end
+
+            -- Update order of table view
+            local setupOrder = nil
+            for _, v in pairs(orderConfigs) do
+                if v.Name == "Tier Low" then
+                    setupOrder = v
                     break
                 end
             end
-            -- Player missing in setup
-            if not playerFound then
-                roll.Priority = -1
-                -- Hide label
-                roll.PriorityLabel:SetText("")
-                roll.PriorityLabel:Hide()
-                -- Show button
-                roll.Add.Button:Show()
-                roll.Add.Button:SetScript("OnClick", function(self)
-                    -- Add player frame
-                    for _, setup in pairs(widgets.Setups) do
-                        if setup.Tab.Button.pushed then
-                            local config = nil
-                            for _, c in pairs(configs) do
-                                if c.Name == setup.Name then
-                                    config = c
+            table.sort(setup.Players, setupOrder.Callback)
+            vOffset = 0
+
+            local sortedOrder = {}
+            for i, player in pairs(setup.Players) do
+                sortedOrder[player.PlayerName] = i
+                SetPoint(player.Container, "TOPLEFT", 0, vOffset)
+                vOffset = vOffset - 32
+            end
+            SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+            for k, config in pairs(addonDB.Configs) do
+                if config.Name == setup.Name then
+                    table.sort(config["PlayerInfos"], function(a, b)
+                        return sortedOrder[a.Name] < sortedOrder[b.Name]
+                    end)
+                    break
+                end
+            end
+
+            for k, v in pairs(setup["Order"]) do
+                if "Tier Low" ~= k then
+                    local cl = color.LightGray
+                    v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
+                    v.Button.pushed = false
+                    v.Button:Enable()
+                end
+            end
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Rare Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Rare = {}
+    addonDB.Widgets.Dialogs.Roll.Rare.Button, addonDB.Widgets.Dialogs.Roll.Rare.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "RARE", 102, 25, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Rare.Button, "RIGHT", addonDB.Widgets.Dialogs.Roll.Tier.Button, "LEFT", -14, 0)
+    addonDB.Widgets.Dialogs.Roll.Rare.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Rare.Button:SetScript("OnLeave", function(self)
+        if self.pushed then
+            local c = color.Gold
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        else
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    addonDB.Widgets.Dialogs.Roll.Rare.Button:SetScript("OnClick", function(self)
+        if not self.pushed then
+            self.pushed = true
+            self:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Rare"
+            self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed = false 
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed = false 
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+            addonDB.Widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+            for _, setup in pairs(addonDB.Widgets.Setups) do
+                if setup.Tab.Button.pushed then
+                    local c = color.Gold
+                    -- Set orderButton active and update order
+                    setup.Order["Rare Low"].Button.pushed = true
+                    setup.Order["Rare Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+                    setup.Order["Rare Low"].Button:Disable()
+
+                    -- update order of rolls
+                    for _, roll in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                        -- Update priorities in rolls
+                        for _, player in pairs(setup.Players) do
+                            if player.PlayerName == roll.PlayerLabel:GetText() then
+                                local num = tonumber(player.RareText:GetText()) + tonumber(player.RareDiffText:GetText())
+                                roll.Priority = num
+                                roll.PriorityLabel:SetText("Prio: ".. num)
+                                roll.PriorityLabel:Show()
+                                break
+                            end
+                        end
+                    end
+
+                    table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                        if a.Priority == nil and b.Priority == nil then
+                            return a.Value > b.Value
+                        end
+                        if a.Priority == nil then
+                            return false 
+                        end
+                        if b.Priority == nil then
+                            return true 
+                        end
+                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                    end)
+
+                    local vOffset = -5
+                    for _, r in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                        SetPoint(r.Frame, "TOPLEFT", 10, vOffset)
+                        vOffset = vOffset - 32
+                    end
+
+                    -- Update order
+                    local setupOrder = nil
+                    for _, v in pairs(orderConfigs) do
+                        if v.Name == "Rare Low" then
+                            setupOrder = v
+                            break
+                        end
+                    end
+                    table.sort(setup.Players, setupOrder.Callback)
+                    local vOffset = 0
+
+                    local sortedOrder = {}
+                    for i, player in pairs(setup.Players) do
+                        sortedOrder[player.PlayerName] = i
+                        SetPoint(player.Container, "TOPLEFT", 0, vOffset)
+                        vOffset = vOffset - 32
+                    end
+                    SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+                    for k, config in pairs(addonDB.Configs) do
+                        if config.Name == setup.Name then
+                            table.sort(config["PlayerInfos"], function(a, b)
+                                return sortedOrder[a.Name] < sortedOrder[b.Name]
+                            end)
+                            break
+                        end
+                    end
+
+                    for k, v in pairs(setup["Order"]) do
+                        if "Rare Low" ~= k then
+                            local cl = color.LightGray
+                            v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
+                            v.Button.pushed = false
+                            v.Button:Enable()
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Normal Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Normal = {}
+    addonDB.Widgets.Dialogs.Roll.Normal.Button, addonDB.Widgets.Dialogs.Roll.Normal.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "NORMAL", 102, 25, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Normal.Button, "LEFT", addonDB.Widgets.Dialogs.Roll.Tier.Button, "RIGHT", 14, 0)
+    addonDB.Widgets.Dialogs.Roll.Normal.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Normal.Button:SetScript("OnLeave", function(self)
+        if self.pushed then
+            local c = color.Gold
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        else
+            local c = color.LightGray
+            self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    addonDB.Widgets.Dialogs.Roll.Normal.Button:SetScript("OnClick", function(self)
+        if not self.pushed then
+            self.pushed = true
+            self:Disable()
+            addonDB.Widgets.Dialogs.Roll.TypeSelection = "Normal"
+            self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+            addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed = false
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed = false
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:Enable()
+            addonDB.Widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+            addonDB.Widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+
+            for _, setup in pairs(addonDB.Widgets.Setups) do
+                if setup.Tab.Button.pushed then
+                    local c = color.Gold
+                    -- Set orderButton active and update order
+                    setup.Order["Normal Low"].Button.pushed = true
+                    setup.Order["Normal Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+                    setup.Order["Normal Low"].Button:Disable()
+
+                    -- update order of rolls
+                    for _, roll in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                        -- Update priorities in rolls
+                        for _, player in pairs(setup.Players) do
+                            if player.PlayerName == roll.PlayerLabel:GetText() then
+                                local num = tonumber(player.NormalText:GetText()) + tonumber(player.NormalDiffText:GetText())
+                                roll.Priority = num
+                                roll.PriorityLabel:SetText("Prio: ".. num)
+                                roll.PriorityLabel:Show()
+                                break
+                            end
+                        end
+                    end
+
+                    table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
+                        if a.Priority == nil and b.Priority == nil then
+                            return a.Value > b.Value
+                        end
+                        if a.Priority == nil then
+                            return false 
+                        end
+                        if b.Priority == nil then
+                            return true 
+                        end
+                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                    end)
+
+                    local vOffset = -5
+                    for _, r in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+                        SetPoint(r.Frame, "TOPLEFT", 10, vOffset)
+                        vOffset = vOffset - 32
+                    end
+
+                    -- Update order
+                    local setupOrder = nil
+                    for _, v in pairs(orderConfigs) do
+                        if v.Name == "Normal Low" then
+                            setupOrder = v
+                            break
+                        end
+                    end
+                    table.sort(setup.Players, setupOrder.Callback)
+                    local vOffset = 0
+
+                    local sortedOrder = {}
+                    for i, player in pairs(setup.Players) do
+                        sortedOrder[player.PlayerName] = i
+                        SetPoint(player.Container, "TOPLEFT", 0, vOffset)
+                        vOffset = vOffset - 32
+                    end
+                    SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
+
+                    for k, config in pairs(addonDB.Configs) do
+                        if config.Name == setup.Name then
+                            table.sort(config["PlayerInfos"], function(a, b)
+                                return sortedOrder[a.Name] < sortedOrder[b.Name]
+                            end)
+                            break
+                        end
+                    end
+
+                    for k, v in pairs(setup["Order"]) do
+                        if "Normal Low" ~= k then
+                            local cl = color.LightGray
+                            v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
+                            v.Button.pushed = false
+                            v.Button:Enable()
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Roll Dialog: Assign Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Roll.Assign = {}
+    addonDB.Widgets.Dialogs.Roll.Assign.Button, addonDB.Widgets.Dialogs.Roll.Assign.Text = CreateButton(addonDB.Widgets.Dialogs.Roll.Frame, "ASSIGN", 125, 40, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Roll.Assign.Button, "LEFT", addonDB.Widgets.Dialogs.Roll.Roll.Button, "RIGHT", 20, 0)
+    addonDB.Widgets.Dialogs.Roll.Assign.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Assign.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
+        if addonDB.Widgets.Dialogs.Roll.Roll.Button.rollActive or addonDB.Widgets.Dialogs.Roll.AssignmentText:GetText() == "NO ASSIGNMENT YET"  or addonDB.Widgets.Dialogs.Roll.TypeSelection == nil then
+            return
+        end
+
+        local playerName = addonDB.Widgets.Dialogs.Roll.AssignmentText:GetText()
+        if addonDB.Widgets.Dialogs.Roll.RollType == "MainSpecRoll" then
+            for _, setup in pairs(addonDB.Widgets.Setups) do
+                if setup.Tab.Button.pushed then
+                    for _, player in pairs(setup.Players) do
+                        if player.PlayerName == playerName then
+                            if addonDB.Widgets.Dialogs.Roll.TypeSelection == "Tier" then
+                                local num = tonumber(player.TierDiffText:GetText()) + 1
+                                if num > 0 then
+                                    local g = color.Green
+                                    player.TierDiffText:SetText("+" .. num)
+                                    player.TierDiffText:SetTextColor(g.r, g.g, g.b)
+                                elseif num < 0 then
+                                    local r = color.Red
+                                    player.TierDiffText:SetText(num)
+                                    player.TierDiffText:SetTextColor(r.r, r.g, r.b)
+                                else
+                                    local r = color.White
+                                    player.TierDiffText:SetText(0)
+                                    player.TierDiffText:SetTextColor(r.r, r.g, r.b)
+                                end
+                            elseif addonDB.Widgets.Dialogs.Roll.TypeSelection == "Rare" then
+                                local num = tonumber(player.RareDiffText:GetText()) + 1
+                                if num > 0 then
+                                    local g = color.Green
+                                    player.RareDiffText:SetText("+" .. num)
+                                    player.RareDiffText:SetTextColor(g.r, g.g, g.b)
+                                elseif num < 0 then
+                                    local r = color.Red
+                                    player.RareDiffText:SetText(num)
+                                    player.RareDiffText:SetTextColor(r.r, r.g, r.b)
+                                else
+                                    local r = color.White
+                                    player.RareDiffText:SetText(0)
+                                    player.RareDiffText:SetTextColor(r.r, r.g, r.b)
+                                end
+                            elseif addonDB.Widgets.Dialogs.Roll.TypeSelection == "Normal" then
+                                local num = tonumber(player.NormalDiffText:GetText()) + 1
+                                if num > 0 then
+                                    local g = color.Green
+                                    player.NormalDiffText:SetText("+" .. num)
+                                    player.NormalDiffText:SetTextColor(g.r, g.g, g.b)
+                                elseif num < 0 then
+                                    local r = color.Red
+                                    player.NormalDiffText:SetText(num)
+                                    player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
+                                else
+                                    local r = color.White
+                                    player.NormalDiffText:SetText(0)
+                                    player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
+                                end
+                            else
+                                print("[ERROR] RaidTables: No loot category selected!")
+                            end
+                            -- Update order if active
+                            local activeOrder = nil
+                            for name, orderBtn in pairs(setup.Order) do
+                                if orderBtn.Button.pushed then
+                                    for _, order in pairs(orderConfigs) do
+                                        if order.Name == name then
+                                            activeOrder = order
+                                            break
+                                        end
+                                    end
                                     break
                                 end
                             end
-                            -- Create new entry
-                            local playerInfo = { 
-                                ["Name"] = fullName,
-                                ["Rare"] = 0,
-                                ["Tier"] = 0,
-                                ["Normal"] = 0,
-                                ["Class"] = class
-                            }
-                            -- Create Player Frame
-                            local player = {}
-                            for fk, fv in pairs(widgets.FreePlayers) do 
-                                player = fv
-                                player.Container:Show()
-                                player.Container:SetParent(setup.Table)
-                                table.remove(widgets.FreePlayers, fk)
-                                break
-                            end
-                            CreatePlayerFrame(player, config, setup, widgets, setup.Table, playerInfo, setup.Table:GetWidth(), 0, #config.PlayerInfos * -32)
+                            if activeOrder then
+                                table.sort(setup.Players, activeOrder["Callback"])
+                                local vOffset = 0
 
-                            -- Insert player data
-                            table.insert(setup.Players, player)
-                            table.insert(config.PlayerInfos, playerInfo)
+                                local sortedOrder = {}
+                                for i, player in pairs(setup.Players) do
+                                    sortedOrder[player.PlayerName] = i
+                                    SetPoint(player.Container, "TOPLEFT", 0, vOffset)
+                                    vOffset = vOffset - 32
+                                end
+                                SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
 
-                            -- Sort by order
-                            if orderName then
-                                for _, v in pairs(orderConfigs) do
-                                    if v.Name == orderName then
-                                        table.sort(setup.Players, v["Callback"])
-                                        local vOffset = 0
-                                        local sortedOrder = {}
-                                        for i, p in pairs(setup.Players) do
-                                            sortedOrder[p.PlayerName] = i
-                                            p.Container:SetPoint("TOPLEFT", 0, vOffset)
-                                            vOffset = vOffset - 32
-                                        end
-                                        setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
+                                for k, config in pairs(addonDB.Configs) do
+                                    if config.Name == setup.Name then
                                         table.sort(config["PlayerInfos"], function(a, b)
                                             return sortedOrder[a.Name] < sortedOrder[b.Name]
                                         end)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    -- Remove add button
-                    for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                        if r.PlayerLabel:GetText() == fullName then
-                            r.Add.Button:Hide()
-                            r.Priority = 0
-                            if widgets.Dialogs.Roll.Tier.Button.pushed or widgets.Dialogs.Roll.Rare.Button.pushed or widgets.Dialogs.Roll.Normal.Button.pushed then
-                                r.PriorityLabel:SetText("Prio: 0")
-                                r.PriorityLabel:Show()
-                            end
-                            table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                                if a.Priority == nil and b.Priority == nil then
-                                    return a.Value > b.Value
-                                end
-                                if a.Priority == nil then
-                                    return false 
-                                end
-                                if b.Priority == nil then
-                                    return true 
-                                end
-                                return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
-                            end)
-
-                            local vOffset = -5
-                            for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                                r.Frame:SetPoint("TOPLEFT", 10, vOffset)
-                                vOffset = vOffset - 32
-                            end
-                            break
-                        end
-                    end
-                    for _, r in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
-                        if r.PlayerLabel:GetText() == fullName then
-                            r.Add.Button:Hide()
-                            break
-                        end
-                    end
-                    for _, r in pairs(widgets.Dialogs.Roll.TransmogRolls) do
-                        if r.PlayerLabel:GetText() == fullName then
-                            r.Add.Button:Hide()
-                            break
-                        end
-                    end
-                    for _, r in pairs(widgets.Dialogs.Roll.InvalidRolls) do
-                        if r.PlayerLabel:GetText() == fullName then
-                            r.Add.Button:Hide()
-                            break
-                        end
-                    end
-                end)
-            end
-            break
-        end
-    end
-
-    roll.Value = rollValue
-
-    table.insert(rolls, roll)
-    table.sort(rolls, function(a, b) 
-        if a.Priority == nil and b.Priority == nil then
-            return a.Value > b.Value
-        end
-        if a.Priority == nil then
-            return false 
-        end
-        if b.Priority == nil then
-            return true 
-        end
-        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
-    end)
-
-    local vOffset = -5
-    for _, r in pairs(rolls) do
-        r.Frame:SetPoint("TOPLEFT", 10, vOffset)
-        vOffset = vOffset - 32
-    end
-
-    if #widgets.Dialogs.Roll.MainSpecRolls > 0 then
-        for _, r in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
-            r.Frame:SetScript("OnClick", function(self) end)
-            r.Frame:SetScript("OnEnter", function(self) end)
-        end
-    end
-    if #widgets.Dialogs.Roll.MainSpecRolls > 0 or #widgets.Dialogs.Roll.SecondSpecRolls > 0 then
-        for _, r in pairs(widgets.Dialogs.Roll.TransmogRolls) do
-            r.Frame:SetScript("OnClick", function(self) end)
-            r.Frame:SetScript("OnEnter", function(self) end)
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Tier Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Tier = {}
-widgets.Dialogs.Roll.Tier.Button, widgets.Dialogs.Roll.Tier.Text = CreateButton(widgets.Dialogs.Roll.Frame, "TIER", 102, 25, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Tier.Button:SetPoint("TOP", 0, -120)
-widgets.Dialogs.Roll.Tier.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Tier.Button:SetScript("OnLeave", function(self)
-    if self.pushed then
-        local c = color.Gold
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    else
-        local c = color.LightGray
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    end
-end)
-widgets.Dialogs.Roll.Tier.Button:SetScript("OnClick", function(self)
-    if not self.pushed then
-        self.pushed = true
-        self:Disable()
-        widgets.Dialogs.Roll.TypeSelection = "Tier"
-        self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-        widgets.Dialogs.Roll.Rare.Button.pushed = false
-        widgets.Dialogs.Roll.Rare.Button:Enable()
-        widgets.Dialogs.Roll.Normal.Button.pushed = false
-        widgets.Dialogs.Roll.Normal.Button:Enable()
-        widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-        widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-
-        for _, setup in pairs(widgets.Setups) do
-            if setup.Tab.Button.pushed then
-                local c = color.Gold
-                -- Set orderButton active and update order
-                setup.Order["Tier Low"].Button.pushed = true
-                setup.Order["Tier Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-                setup.Order["Tier Low"].Button:Disable()
-
-                -- update order of rolls
-                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    -- Update priorities in rolls
-                    for _, player in pairs(setup.Players) do
-                        if player.PlayerName == roll.PlayerLabel:GetText() then
-                            local num = tonumber(player.TierText:GetText()) + tonumber(player.TierDiffText:GetText())
-                            roll.Priority = num
-                            roll.PriorityLabel:SetText("Prio: ".. num)
-                            roll.PriorityLabel:Show()
-                            break
-                        end
-                    end
-                end
-
-                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                    if a.Priority == nil and b.Priority == nil then
-                        return a.Value > b.Value
-                    end
-                    if a.Priority == nil then
-                        return false 
-                    end
-                    if b.Priority == nil then
-                        return true 
-                    end
-                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
-                end)
-
-                local vOffset = -5
-                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
-                    vOffset = vOffset - 32
-                end
-
-                -- Update order of table view
-                local setupOrder = nil
-                for _, v in pairs(orderConfigs) do
-                    if v.Name == "Tier Low" then
-                        setupOrder = v
-                        break
-                    end
-                end
-                table.sort(setup.Players, setupOrder.Callback)
-                local vOffset = 0
-
-                local sortedOrder = {}
-                for i, player in pairs(setup.Players) do
-                    sortedOrder[player.PlayerName] = i
-                    player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                    vOffset = vOffset - 32
-                end
-                setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
-                for k, config in pairs(configs) do
-                    if config.Name == setup.Name then
-                        table.sort(config["PlayerInfos"], function(a, b)
-                            return sortedOrder[a.Name] < sortedOrder[b.Name]
-                        end)
-                        break
-                    end
-                end
-
-                for k, v in pairs(setup["Order"]) do
-                    if "Tier Low" ~= k then
-                        local cl = color.LightGray
-                        v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
-                        v.Button.pushed = false
-                        v.Button:Enable()
-                    end
-                end
-                break
-            end
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Rare Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Rare = {}
-widgets.Dialogs.Roll.Rare.Button, widgets.Dialogs.Roll.Rare.Text = CreateButton(widgets.Dialogs.Roll.Frame, "RARE", 102, 25, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Rare.Button:SetPoint("RIGHT", widgets.Dialogs.Roll.Tier.Button, "LEFT", -14, 0)
-widgets.Dialogs.Roll.Rare.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Rare.Button:SetScript("OnLeave", function(self)
-    if self.pushed then
-        local c = color.Gold
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    else
-        local c = color.LightGray
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    end
-end)
-widgets.Dialogs.Roll.Rare.Button:SetScript("OnClick", function(self)
-    if not self.pushed then
-        self.pushed = true
-        self:Disable()
-        widgets.Dialogs.Roll.TypeSelection = "Rare"
-        self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-        widgets.Dialogs.Roll.Tier.Button.pushed = false 
-        widgets.Dialogs.Roll.Tier.Button:Enable()
-        widgets.Dialogs.Roll.Normal.Button.pushed = false 
-        widgets.Dialogs.Roll.Normal.Button:Enable()
-        widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-        widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-
-        for _, setup in pairs(widgets.Setups) do
-            if setup.Tab.Button.pushed then
-                local c = color.Gold
-                -- Set orderButton active and update order
-                setup.Order["Rare Low"].Button.pushed = true
-                setup.Order["Rare Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-                setup.Order["Rare Low"].Button:Disable()
-
-                -- update order of rolls
-                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    -- Update priorities in rolls
-                    for _, player in pairs(setup.Players) do
-                        if player.PlayerName == roll.PlayerLabel:GetText() then
-                            local num = tonumber(player.RareText:GetText()) + tonumber(player.RareDiffText:GetText())
-                            roll.Priority = num
-                            roll.PriorityLabel:SetText("Prio: ".. num)
-                            roll.PriorityLabel:Show()
-                            break
-                        end
-                    end
-                end
-
-                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                    if a.Priority == nil and b.Priority == nil then
-                        return a.Value > b.Value
-                    end
-                    if a.Priority == nil then
-                        return false 
-                    end
-                    if b.Priority == nil then
-                        return true 
-                    end
-                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
-                end)
-
-                local vOffset = -5
-                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
-                    vOffset = vOffset - 32
-                end
-
-                -- Update order
-                local setupOrder = nil
-                for _, v in pairs(orderConfigs) do
-                    if v.Name == "Rare Low" then
-                        setupOrder = v
-                        break
-                    end
-                end
-                table.sort(setup.Players, setupOrder.Callback)
-                local vOffset = 0
-
-                local sortedOrder = {}
-                for i, player in pairs(setup.Players) do
-                    sortedOrder[player.PlayerName] = i
-                    player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                    vOffset = vOffset - 32
-                end
-                setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
-                for k, config in pairs(configs) do
-                    if config.Name == setup.Name then
-                        table.sort(config["PlayerInfos"], function(a, b)
-                            return sortedOrder[a.Name] < sortedOrder[b.Name]
-                        end)
-                        break
-                    end
-                end
-
-                for k, v in pairs(setup["Order"]) do
-                    if "Rare Low" ~= k then
-                        local cl = color.LightGray
-                        v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
-                        v.Button.pushed = false
-                        v.Button:Enable()
-                    end
-                end
-                break
-            end
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Normal Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Normal = {}
-widgets.Dialogs.Roll.Normal.Button, widgets.Dialogs.Roll.Normal.Text = CreateButton(widgets.Dialogs.Roll.Frame, "NORMAL", 102, 25, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Normal.Button:SetPoint("LEFT", widgets.Dialogs.Roll.Tier.Button, "RIGHT", 14, 0)
-widgets.Dialogs.Roll.Normal.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Normal.Button:SetScript("OnLeave", function(self)
-    if self.pushed then
-        local c = color.Gold
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    else
-        local c = color.LightGray
-        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-    end
-end)
-widgets.Dialogs.Roll.Normal.Button:SetScript("OnClick", function(self)
-    if not self.pushed then
-        self.pushed = true
-        self:Disable()
-        widgets.Dialogs.Roll.TypeSelection = "Normal"
-        self:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-        widgets.Dialogs.Roll.Tier.Button.pushed = false
-        widgets.Dialogs.Roll.Tier.Button:Enable()
-        widgets.Dialogs.Roll.Rare.Button.pushed = false
-        widgets.Dialogs.Roll.Rare.Button:Enable()
-        widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-        widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-
-        for _, setup in pairs(widgets.Setups) do
-            if setup.Tab.Button.pushed then
-                local c = color.Gold
-                -- Set orderButton active and update order
-                setup.Order["Normal Low"].Button.pushed = true
-                setup.Order["Normal Low"].Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-                setup.Order["Normal Low"].Button:Disable()
-
-                -- update order of rolls
-                for _, roll in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    -- Update priorities in rolls
-                    for _, player in pairs(setup.Players) do
-                        if player.PlayerName == roll.PlayerLabel:GetText() then
-                            local num = tonumber(player.NormalText:GetText()) + tonumber(player.NormalDiffText:GetText())
-                            roll.Priority = num
-                            roll.PriorityLabel:SetText("Prio: ".. num)
-                            roll.PriorityLabel:Show()
-                            break
-                        end
-                    end
-                end
-
-                table.sort(widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                    if a.Priority == nil and b.Priority == nil then
-                        return a.Value > b.Value
-                    end
-                    if a.Priority == nil then
-                        return false 
-                    end
-                    if b.Priority == nil then
-                        return true 
-                    end
-                    return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
-                end)
-
-                local vOffset = -5
-                for _, r in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-                    r.Frame:SetPoint("TOPLEFT", 10, vOffset)
-                    vOffset = vOffset - 32
-                end
-
-                -- Update order
-                local setupOrder = nil
-                for _, v in pairs(orderConfigs) do
-                    if v.Name == "Normal Low" then
-                        setupOrder = v
-                        break
-                    end
-                end
-                table.sort(setup.Players, setupOrder.Callback)
-                local vOffset = 0
-
-                local sortedOrder = {}
-                for i, player in pairs(setup.Players) do
-                    sortedOrder[player.PlayerName] = i
-                    player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                    vOffset = vOffset - 32
-                end
-                setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
-                for k, config in pairs(configs) do
-                    if config.Name == setup.Name then
-                        table.sort(config["PlayerInfos"], function(a, b)
-                            return sortedOrder[a.Name] < sortedOrder[b.Name]
-                        end)
-                        break
-                    end
-                end
-
-                for k, v in pairs(setup["Order"]) do
-                    if "Normal Low" ~= k then
-                        local cl = color.LightGray
-                        v.Button:SetBackdropBorderColor(cl.r, cl.g, cl.b, cl.a)
-                        v.Button.pushed = false
-                        v.Button:Enable()
-                    end
-                end
-                break
-            end
-        end
-    end
-end)
-
------------------------------------------------------------------------------------------------------------------------
--- Roll Dialog: Assign Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Dialogs.Roll.Assign = {}
-widgets.Dialogs.Roll.Assign.Button, widgets.Dialogs.Roll.Assign.Text = CreateButton(widgets.Dialogs.Roll.Frame, "ASSIGN", 125, 40, color.DarkGray, color.LightGray, color.Gold)
-widgets.Dialogs.Roll.Assign.Button:SetPoint("LEFT", widgets.Dialogs.Roll.Roll.Button, "RIGHT", 20, 0)
-widgets.Dialogs.Roll.Assign.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Assign.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Dialogs.Roll.Assign.Button:SetScript("OnClick", function(self)
-    if widgets.Dialogs.Roll.Roll.Button.rollActive or widgets.Dialogs.Roll.AssignmentText:GetText() == "NO ASSIGNMENT YET"  or widgets.Dialogs.Roll.TypeSelection == nil then
-        return
-    end
-
-    local playerName = widgets.Dialogs.Roll.AssignmentText:GetText()
-    if widgets.Dialogs.Roll.RollType == "MainSpecRoll" then
-        for _, setup in pairs(widgets.Setups) do
-            if setup.Tab.Button.pushed then
-                for _, player in pairs(setup.Players) do
-                    if player.PlayerName == playerName then
-                        if widgets.Dialogs.Roll.TypeSelection == "Tier" then
-                            local num = tonumber(player.TierDiffText:GetText()) + 1
-                            if num > 0 then
-                                local g = color.Green
-                                player.TierDiffText:SetText("+" .. num)
-                                player.TierDiffText:SetTextColor(g.r, g.g, g.b)
-                            elseif num < 0 then
-                                local r = color.Red
-                                player.TierDiffText:SetText(num)
-                                player.TierDiffText:SetTextColor(r.r, r.g, r.b)
-                            else
-                                local r = color.White
-                                player.TierDiffText:SetText(0)
-                                player.TierDiffText:SetTextColor(r.r, r.g, r.b)
-                            end
-                        elseif widgets.Dialogs.Roll.TypeSelection == "Rare" then
-                            local num = tonumber(player.RareDiffText:GetText()) + 1
-                            if num > 0 then
-                                local g = color.Green
-                                player.RareDiffText:SetText("+" .. num)
-                                player.RareDiffText:SetTextColor(g.r, g.g, g.b)
-                            elseif num < 0 then
-                                local r = color.Red
-                                player.RareDiffText:SetText(num)
-                                player.RareDiffText:SetTextColor(r.r, r.g, r.b)
-                            else
-                                local r = color.White
-                                player.RareDiffText:SetText(0)
-                                player.RareDiffText:SetTextColor(r.r, r.g, r.b)
-                            end
-                        elseif widgets.Dialogs.Roll.TypeSelection == "Normal" then
-                            local num = tonumber(player.NormalDiffText:GetText()) + 1
-                            if num > 0 then
-                                local g = color.Green
-                                player.NormalDiffText:SetText("+" .. num)
-                                player.NormalDiffText:SetTextColor(g.r, g.g, g.b)
-                            elseif num < 0 then
-                                local r = color.Red
-                                player.NormalDiffText:SetText(num)
-                                player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
-                            else
-                                local r = color.White
-                                player.NormalDiffText:SetText(0)
-                                player.NormalDiffText:SetTextColor(r.r, r.g, r.b)
-                            end
-                        else
-                            print("[ERROR] No loot category selected!")
-                        end
-                        -- Update order if active
-                        local activeOrder = nil
-                        for name, orderBtn in pairs(setup.Order) do
-                            if orderBtn.Button.pushed then
-                                for _, order in pairs(orderConfigs) do
-                                    if order.Name == name then
-                                        activeOrder = order
                                         break
                                     end
                                 end
-                                break
                             end
+                            break
                         end
-                        if activeOrder then
-                            table.sort(setup.Players, activeOrder["Callback"])
-                            local vOffset = 0
-
-                            local sortedOrder = {}
-                            for i, player in pairs(setup.Players) do
-                                sortedOrder[player.PlayerName] = i
-                                player.Container:SetPoint("TOPLEFT", 0, vOffset)
-                                vOffset = vOffset - 32
-                            end
-                            setup.TableBottomLine:SetPoint("TOPLEFT", 5, vOffset + 2)
-
-                            for k, config in pairs(configs) do
-                                if config.Name == setup.Name then
-                                    table.sort(config["PlayerInfos"], function(a, b)
-                                        return sortedOrder[a.Name] < sortedOrder[b.Name]
-                                    end)
-                                    break
-                                end
-                            end
-                        end
-                        break
                     end
+                    break
                 end
-                break
             end
         end
-    end
 
-    local assignment = {
-        ItemLink = widgets.Dialogs.Roll.ActiveItemLink,
-        PlayerName = playerName,
-        RollType = widgets.Dialogs.Roll.RollType,
-        Class = widgets.Dialogs.Roll.Class
-    }
-    table.insert(widgets.Dialogs.Roll.AssignmentList, assignment)
+        local assignment = {
+            ItemLink = addonDB.Widgets.Dialogs.Roll.ActiveItemLink,
+            PlayerName = playerName,
+            RollType = addonDB.Widgets.Dialogs.Roll.RollType,
+            Class = addonDB.Widgets.Dialogs.Roll.Class
+        }
+        table.insert(addonDB.Widgets.Dialogs.Roll.AssignmentList, assignment)
 
-    widgets.Dialogs.Roll.ActiveItemLink = nil
-    widgets.Dialogs.Roll.TypeSelection = nil
+        addonDB.Widgets.Dialogs.Roll.ActiveItemLink = nil
+        addonDB.Widgets.Dialogs.Roll.TypeSelection = nil
 
-    widgets.Dialogs.Roll.Tier.Button.pushed = false
-    widgets.Dialogs.Roll.Tier.Button:Enable()
-    widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Tier.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Tier.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
-    widgets.Dialogs.Roll.Rare.Button.pushed = false
-    widgets.Dialogs.Roll.Rare.Button:Enable()
-    widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Rare.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Rare.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
-    widgets.Dialogs.Roll.Normal.Button.pushed = false
-    widgets.Dialogs.Roll.Normal.Button:Enable()
-    widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed = false
+        addonDB.Widgets.Dialogs.Roll.Normal.Button:Enable()
+        addonDB.Widgets.Dialogs.Roll.Normal.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
 
-    widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
-    widgets.Dialogs.Roll.AssignmentText:SetText("NO ASSIGNMENT YET")
-    widgets.Dialogs.Roll.AssignmentText:SetTextColor(color.White.r, color.White.g, color.White.b)
+        addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
+        addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText("NO ASSIGNMENT YET")
+        addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(color.White.r, color.White.g, color.White.b)
 
-    for k, v in pairs(widgets.Dialogs.Roll.MainSpecRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.MainSpecRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.SecondSpecRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.SecondSpecRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.TransmogRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.TransmogRolls = {}
-    for k, v in pairs(widgets.Dialogs.Roll.InvalidRolls) do
-        v.Frame:Hide()
-        table.insert(widgets.Dialogs.Roll.FreeRolls, v)
-    end
-    widgets.Dialogs.Roll.InvalidRolls = {}
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.MainSpecRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.MainSpecRolls = {}
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.SecondSpecRolls = {}
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.TransmogRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.TransmogRolls = {}
+        for k, v in pairs(addonDB.Widgets.Dialogs.Roll.InvalidRolls) do
+            v.Frame:Hide()
+            table.insert(addonDB.Widgets.Dialogs.Roll.FreeRolls, v)
+        end
+        addonDB.Widgets.Dialogs.Roll.InvalidRolls = {}
 
-    HandleLootAssignment()
-end)
+        HandleLootAssignment()
+    end)
 
------------------------------------------------------------------------------------------------------------------------
--- Create Summary Dialog
------------------------------------------------------------------------------------------------------------------------
-widgets.Summary = {}
-widgets.Summary.Items = {}
-widgets.Summary.FreeItems = {}
-widgets.Summary.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-widgets.Summary.Frame:SetSize(390, 450)
-widgets.Summary.Frame:SetPoint("CENTER", 0, 0)
-widgets.Summary.Frame:SetMovable(true)
-widgets.Summary.Frame:EnableMouse(true)
-widgets.Summary.Frame:RegisterForDrag("LeftButton")
-widgets.Summary.Frame:SetScript("OnDragStart", widgets.Summary.Frame.StartMoving)
-widgets.Summary.Frame:SetScript("OnDragStop", widgets.Summary.Frame.StopMovingOrSizing)
-widgets.Summary.Frame:SetBackdrop({
-    bgFile = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 2,
-})
-widgets.Summary.Frame:SetBackdropColor(0, 0, 0, 1)
-widgets.Summary.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
-widgets.Summary.Frame:SetFrameStrata("DIALOG")
-widgets.Summary.Frame:Hide()
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Summary Dialog
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Summary = {}
+    addonDB.Widgets.Summary.Items = {}
+    addonDB.Widgets.Summary.FreeItems = {}
+    addonDB.Widgets.Summary.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Summary.Frame, 390, 450)
+    SetPoint(addonDB.Widgets.Summary.Frame, "CENTER", 0, 0)
+    addonDB.Widgets.Summary.Frame:SetMovable(true)
+    addonDB.Widgets.Summary.Frame:EnableMouse(true)
+    addonDB.Widgets.Summary.Frame:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Summary.Frame:SetScript("OnDragStart", addonDB.Widgets.Summary.Frame.StartMoving)
+    addonDB.Widgets.Summary.Frame:SetScript("OnDragStop", addonDB.Widgets.Summary.Frame.StopMovingOrSizing)
+    addonDB.Widgets.Summary.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Summary.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Summary.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Summary.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Summary.Frame:Hide()
 
------------------------------------------------------------------------------------------------------------------------
--- Create Summary Dialog Header
------------------------------------------------------------------------------------------------------------------------
-widgets.Summary.Header = CreateHeading("SUMMARY", widgets.Summary.Frame:GetWidth() - 10, widgets.Summary.Frame, 5, -10, true)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Summary Dialog Header
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Summary.Header = CreateHeading("SUMMARY", GetWidth(addonDB.Widgets.Summary.Frame) - 10, addonDB.Widgets.Summary.Frame, 5, -10, true)
 
------------------------------------------------------------------------------------------------------------------------
--- Create Summary Dialog Close Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Summary.Close = {}
-widgets.Summary.Close.Button, widgets.Summary.Close.Text = CreateButton(widgets.Summary.Frame, "CLOSE", 102, 30, color.DarkGray, color.LightGray, color.Gold)
-widgets.Summary.Close.Button:SetPoint("BOTTOMRIGHT", widgets.Summary.Frame, "BOTTOMRIGHT", -10, 10)
-widgets.Summary.Close.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Summary.Close.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Summary.Close.Button:SetScript("OnClick", function(self)
-    widgets.Dialogs.Roll.AssignmentList = {}
-    widgets.Summary.Frame:Hide()
-    -- Free all frames
-    for _, w in pairs(widgets.Summary.Items) do
-        table.insert(widgets.Summary.FreeItems, w)
-        w.Frame:Hide()
-    end
-    widgets.Summary.Items = {}
-    -- Show Roll frame again if rolls came up while summary was shown
-    HandleLootAssignment()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Summary Dialog Close Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Summary.Close = {}
+    addonDB.Widgets.Summary.Close.Button, addonDB.Widgets.Summary.Close.Text = CreateButton(addonDB.Widgets.Summary.Frame, "CLOSE", 102, 30, color.DarkGray, color.LightGray, color.Gold)
+    SetPoint(addonDB.Widgets.Summary.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Summary.Frame, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Summary.Close.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Summary.Close.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Summary.Close.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Roll.AssignmentList = {}
+        addonDB.Widgets.Summary.Frame:Hide()
+        -- Free all frames
+        for _, w in pairs(addonDB.Widgets.Summary.Items) do
+            table.insert(addonDB.Widgets.Summary.FreeItems, w)
+            w.Frame:Hide()
+        end
+        addonDB.Widgets.Summary.Items = {}
+        -- Show Roll frame again if rolls came up while summary was shown
+        HandleLootAssignment()
+    end)
 
------------------------------------------------------------------------------------------------------------------------
--- Setup New Raid Button
------------------------------------------------------------------------------------------------------------------------
-widgets.NewRaid = {}
-widgets.NewRaid.Button, widgets.NewRaid.Text= CreateButton(widgets.Addon, "New RAID", 102, 35, color.DarkGray, color.LightGray)
-widgets.NewRaid.Button:SetPoint("BOTTOMLEFT", 6, 66)
-widgets.NewRaid.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.NewRaid.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.NewRaid.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-    widgets.Dialogs.NewRaid.Frame:Show()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Setup New Raid Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.NewRaid = {}
+    addonDB.Widgets.NewRaid.Button, addonDB.Widgets.NewRaid.Text= CreateButton(addonDB.Widgets.Addon, "New RAID", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.NewRaid.Button, "BOTTOMLEFT", 6, 66)
+    addonDB.Widgets.NewRaid.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.NewRaid.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.NewRaid.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
+        addonDB.Widgets.Dialogs.NewRaid.Frame:Show()
+    end)
 
------------------------------------------------------------------------------------------------------------------------
--- Setup Import Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Import = {}
-widgets.Import.Button, widgets.Import.Text = CreateButton(widgets.Addon, "Import", 102, 35, color.DarkGray, color.LightGray)
-widgets.Import.Button:SetPoint("BOTTOMLEFT", 6, 25)
-widgets.Import.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Import.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Import.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-    widgets.Dialogs.Import.Frame:Show()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Setup Import Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Import = {}
+    addonDB.Widgets.Import.Button, addonDB.Widgets.Import.Text = CreateButton(addonDB.Widgets.Addon, "Import", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Import.Button, "BOTTOMLEFT", 6, 25)
+    addonDB.Widgets.Import.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Import.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Import.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
+        addonDB.Widgets.Dialogs.Import.Frame:Show()
+    end)
 
------------------------------------------------------------------------------------------------------------------------
--- Setup AddPlayers Button
------------------------------------------------------------------------------------------------------------------------
-widgets.AddPlayers = {}
-widgets.AddPlayers.Button, widgets.AddPlayers.Text = CreateButton(widgets.Addon, "Add Players", 102, 35, color.DarkGray, color.LightGray)
-widgets.AddPlayers.Button:SetPoint("BOTTOMLEFT", 112, 66)
-widgets.AddPlayers.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.AddPlayers.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.AddPlayers.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Setup AddPlayers Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.AddPlayers = {}
+    addonDB.Widgets.AddPlayers.Button, addonDB.Widgets.AddPlayers.Text = CreateButton(addonDB.Widgets.Addon, "Add Players", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.AddPlayers.Button, "BOTTOMLEFT", 112, 66)
+    addonDB.Widgets.AddPlayers.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.AddPlayers.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.AddPlayers.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
 
-    for _, setup in pairs(widgets.Setups) do
-        if setup.Tab.Button.pushed then
-            local units = GetUnregisteredPlayers(setup)
-            for _, unit in pairs(units) do
-                -- Create frame
-                local player = {}
-                player.Class = unit.Class
-                local c = classColor[unit.Class]
-                if #widgets.Dialogs.AddPlayers.FreePlayerFrames > 0 then
-                    for k, v in pairs(widgets.Dialogs.AddPlayers.FreePlayerFrames) do
-                        player = v
-                        player.Container:Show()
+        for _, setup in pairs(addonDB.Widgets.Setups) do
+            if setup.Tab.Button.pushed then
+                local units = GetUnregisteredPlayers(setup)
+                for _, unit in pairs(units) do
+                    -- Create frame
+                    local player = {}
+                    player.Class = unit.Class
+                    local c = classColor[unit.Class]
+                    if #addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames > 0 then
+                        for k, v in pairs(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames) do
+                            player = v
+                            player.Container:Show()
+                            player.Checkbox:SetChecked(false)
+                            player.Name:SetText(unit.Name)
+                            player.Name:SetTextColor(c.r, c.g, c.b)
+                            SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
+                            table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
+                            table.remove(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames, k)
+                            break 
+                        end
+                    else
+                        player.Container = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.ScrollView, "BackdropTemplate")
+                        SetWidth(player.Container, GetWidth(addonDB.Widgets.Dialogs.AddPlayers.ScrollView) - 20)
+                        SetHeight(player.Container, 30)
+                        player.Container:SetBackdrop({
+                            bgFile = "Interface\\Buttons\\WHITE8x8",
+                            edgeFile = "Interface\\Buttons\\WHITE8x8",
+                            edgeSize = math.max(1, Scaled(2)),
+                        })
+                        player.Container:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
+                        player.Container:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
+                        SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
+                        player.Name = CreateLabel(unit.Name, player.Container, 100, -9, classColor[unit.Class])
+                        player.Checkbox = CreateFrame("CheckButton", nil, player.Container, "ChatConfigCheckButtonTemplate")
+                        SetSize(player.Checkbox, 24, 24)
                         player.Checkbox:SetChecked(false)
-                        player.Name:SetText(unit.Name)
-                        player.Name:SetTextColor(c.r, c.g, c.b)
-                        player.Container:SetPoint("TOPLEFT", 10, -10 + -33 * #widgets.Dialogs.AddPlayers.PlayerFrames)
-                        table.insert(widgets.Dialogs.AddPlayers.PlayerFrames, player)
-                        table.remove(widgets.Dialogs.AddPlayers.FreePlayerFrames, k)
-                        break 
+                        SetPoint(player.Checkbox, "TOPLEFT", 30, -3)
+                        table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
                     end
-                else
-                    player.Container = CreateFrame("Frame", nil, widgets.Dialogs.AddPlayers.ScrollView, "BackdropTemplate")
-                    player.Container:SetWidth(widgets.Dialogs.AddPlayers.ScrollView:GetWidth() - 20)
-                    player.Container:SetHeight(30)
-                    player.Container:SetBackdrop({
-                        bgFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeFile = "Interface\\Buttons\\WHITE8x8",
-                        edgeSize = 2,
-                    })
-                    player.Container:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
-                    player.Container:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
-                    player.Container:SetPoint("TOPLEFT", 10, -10 + -33 * #widgets.Dialogs.AddPlayers.PlayerFrames)
-                    player.Name = CreateLabel(unit.Name, player.Container, 100, -9, classColor[unit.Class])
-                    player.Checkbox = CreateFrame("CheckButton", nil, player.Container, "ChatConfigCheckButtonTemplate")
-                    player.Checkbox:SetSize(24, 24)
-                    player.Checkbox:SetChecked(false)
-                    player.Checkbox:SetPoint("TOPLEFT", 30, -3)
-                    table.insert(widgets.Dialogs.AddPlayers.PlayerFrames, player)
                 end
+                break;
             end
-            break;
         end
-    end
 
-    widgets.Dialogs.AddPlayers.Frame:Show()
-end)
+        addonDB.Widgets.Dialogs.AddPlayers.Frame:Show()
+    end)
 
------------------------------------------------------------------------------------------------------------------------
--- Setup Options Button
------------------------------------------------------------------------------------------------------------------------
-widgets.Options = {}
-widgets.Options.Button, widgets.Options.Text = CreateButton(widgets.Addon, "Options", 102, 35, color.DarkGray, color.LightGray)
-widgets.Options.Button:SetPoint("BOTTOMLEFT", 112, 25)
-widgets.Options.Button:SetScript("OnEnter", function(self)
-    local c = color.Gold
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Options.Button:SetScript("OnLeave", function(self)
-    local c = color.LightGray
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-end)
-widgets.Options.Button:SetScript("OnClick", function(self)
-    if IsDialogShown() then
-        return
-    end
-    widgets.Dialogs.Options.Frame:ClearAllPoints()
-    widgets.Dialogs.Options.Frame:SetPoint("CENTER", widgets.Addon, "CENTER", 0, 0)
-    widgets.Dialogs.Options.TierIdInputField:SetText(ArrayToString(addonDB.Options.TierItems))
-    widgets.Dialogs.Options.RareIdInputField:SetText(ArrayToString(addonDB.Options.RareItems))
-    widgets.Dialogs.Options.Frame:Show()
-end)
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Setup Options Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Options = {}
+    addonDB.Widgets.Options.Button, addonDB.Widgets.Options.Text = CreateButton(addonDB.Widgets.Addon, "Options", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Options.Button, "BOTTOMLEFT", 112, 25)
+    addonDB.Widgets.Options.Button:SetScript("OnEnter", function(self)
+        local c = color.Gold
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Options.Button:SetScript("OnLeave", function(self)
+        local c = color.LightGray
+        self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    end)
+    addonDB.Widgets.Options.Button:SetScript("OnClick", function(self)
+        if IsDialogShown() then
+            return
+        end
+        addonDB.Widgets.Dialogs.Options.Frame:ClearAllPoints()
+        SetPoint(addonDB.Widgets.Dialogs.Options.Frame, "CENTER", addonDB.Widgets.Addon, "CENTER", 0, 0)
+        addonDB.Widgets.Dialogs.Options.TierIdInputField:SetText(ArrayToString(addonDB.Options.TierItems))
+        addonDB.Widgets.Dialogs.Options.RareIdInputField:SetText(ArrayToString(addonDB.Options.RareItems))
+        addonDB.Widgets.Dialogs.Options.Frame:Show()
+    end)
 
+end
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Register Addon Events
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Addon:RegisterEvent("ADDON_LOADED")
-widgets.Addon:RegisterEvent("PLAYER_LOGOUT")
-widgets.Addon:RegisterEvent("PLAYER_LOGIN")
-widgets.Addon:RegisterEvent("BOSS_KILL")
-widgets.Addon:RegisterEvent("START_LOOT_ROLL")
-widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
+addonDB.Widgets.Addon:RegisterEvent("ADDON_LOADED")
+addonDB.Widgets.Addon:RegisterEvent("PLAYER_LOGOUT")
+addonDB.Widgets.Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
+addonDB.Widgets.Addon:RegisterEvent("BOSS_KILL")
+addonDB.Widgets.Addon:RegisterEvent("START_LOOT_ROLL")
+addonDB.Widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
+addonDB.Widgets.Addon:RegisterEvent("CHAT_MSG_ADDON")
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Callback for Event Handling
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Addon:SetScript("OnEvent", function(self, event, arg1)
+addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...) 
     if event == "ADDON_LOADED" and arg1 == addonName then
+        ---------------------------------------------------------------------------------------------------------------
+        -- Get SavedVariables
+        ---------------------------------------------------------------------------------------------------------------
         local savedVariable = RaidTablesDB or {}
+        addonDB.Scaling = savedVariable.Scaling or 1.0
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Setup User Interface
+        ---------------------------------------------------------------------------------------------------------------
+        SetupUserInterface()
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Load Configuration Items
+        ---------------------------------------------------------------------------------------------------------------
         if savedVariable.Config then
+            local hasEntries = false
+
             for k, v in pairs(savedVariable.Config) do
-                table.insert(addonDB.Config, v)
+                table.insert(addonDB.Configs, v)
                 SetupNewEntry(v, k == 1)
+                hasEntries = true
+            end
+
+            if not hasEntries then
+                local c = color.LightGray
+                addonDB.Widgets.Export.Button:Hide()
+                addonDB.Widgets.Save.Button:Hide()
+                addonDB.Widgets.Print.Button:Hide()
+                addonDB.Widgets.AddPlayers.Button:Disable()
+                addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
             end
         end
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Load Options
+        ---------------------------------------------------------------------------------------------------------------
         addonDB.Options = {}
         addonDB.Options.TierItems = (savedVariable.Options and savedVariable.Options.TierItems) or TierItems
         addonDB.Options.RareItems = (savedVariable.Options and savedVariable.Options.RareItems) or RareItems
-    elseif event == "PLAYER_LOGIN" then
-        if IsInInstance("raid") and not addonDB.Tracking.Active and not widgets.Dialogs.ActivateRaid.Frame:IsShown() then
-            widgets.Dialogs.ActivateRaid.SetupSelection()
-            widgets.Dialogs.ActivateRaid.Frame:Show()
+        
+        ---------------------------------------------------------------------------------------------------------------
+        -- Registery Addon Message
+        ---------------------------------------------------------------------------------------------------------------
+        addonDB.ChatMsgRegistered = C_ChatInfo.RegisterAddonMessagePrefix("RaidTablesShare") 
+        if not addonDB.ChatMsgRegistered then
+            print("[ERROR] RaidTables: Addon Chat Message Registration FAILED.")
         end
+
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        if IsInRaid() and not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
+            addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
+            addonDB.Widgets.Dialogs.ActivateRaid.Frame:Show()
+        end
+
     elseif event == "PLAYER_LOGOUT" then
         RaidTablesDB = {}
-        RaidTablesDB.Config = addonDB.Config
+        RaidTablesDB.Config = addonDB.Configs
         RaidTablesDB.Options = addonDB.Options
+        RaidTablesDB.Scaling = addonDB.Scaling
+
     elseif event == "RAID_INSTANCE_WELCOME" then
-        if not addonDB.Tracking.Active and not widgets.Dialogs.ActivateRaid.Frame:IsShown() then
-            widgets.Dialogs.ActivateRaid.SetupSelection()
-            widgets.Dialogs.ActivateRaid.Frame:Show()
+        if not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
+            addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
+            addonDB.Widgets.Dialogs.ActivateRaid.Frame:Show()
+        elseif addonDB.Tracking.Active then
+            ShareConfiguration(select(2, GetConfigByName(addonDB.Tracking.Name)))
         end
+
     elseif event == "BOSS_KILL" then
         -- pass
+
     elseif event == "START_LOOT_ROLL" and arg1 then
         if addonDB.Tracking.Active and IsInRaid() then
             local itemLink = GetLootRollItemLink(arg1)
-            widgets.Dialogs.Roll.Items = widgets.Dialogs.Roll.Items or {}
-            table.insert(widgets.Dialogs.Roll.Items, itemLink)
+            addonDB.Widgets.Dialogs.Roll.Items = addonDB.Widgets.Dialogs.Roll.Items or {}
+            table.insert(addonDB.Widgets.Dialogs.Roll.Items, itemLink)
 
-            for _, s in pairs(widgets.Setups) do
+            for _, s in pairs(addonDB.Widgets.Setups) do
                 if addonDB.Tracking.Name == nil and s.Tab.Button.pushed then
                     addonDB.Tracking.Name = s.Name
                 elseif s.Name == addonDB.Tracking.Name then
@@ -4213,6 +4603,11 @@ widgets.Addon:SetScript("OnEvent", function(self, event, arg1)
                     local c = color.Gold
                     s.Tab.Button:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
                     s.Content:Show()
+                    if addonDB.Tracking.Active and addonDB.Tracking.Name == s.Tab.Text:GetText() then
+                        addonDB.Widgets.Share.Frame:Show()
+                    else
+                        addonDB.Widgets.Share.Frame:Hide()
+                    end
                 else
                     -- Hide all other Tabs
                     local cl = color.LightGray
@@ -4224,6 +4619,71 @@ widgets.Addon:SetScript("OnEvent", function(self, event, arg1)
             end
 
             HandleLootAssignment()
+        end
+
+    elseif event == "CHAT_MSG_ADDON" and arg1 == "RaidTablesShare" then
+        local msg, msgType, sender = ...
+        local playerName, realm = UnitFullName("player")
+        local fullPlayerName = playerName.."-"..realm
+
+        -- Skip message from self
+        if sender == fullPlayerName then
+            return
+        end
+
+        addonDB.MsgBuffer = addonDB.MsgBuffer or {}
+        addonDB.MsgBuffer[sender] = addonDB.MsgBuffer[sender] or {}
+        
+        local parts = SplitString(msg, "$|$")
+        local id, startIndex, endIndex, totalLength, msgPart = parts[1], parts[2], parts[3], parts[4], parts[5]
+        if not startIndex or not endIndex or not msgPart or not totalLength or not id then
+            print("[ERROR] RaidTables: Received corrupted message.")
+            return
+        end
+
+        local now = GetTime()
+        addonDB.MsgBuffer[sender][id] = addonDB.MsgBuffer[sender][id] or {}
+        addonDB.MsgBuffer[sender][id].totalLength = tonumber(totalLength)
+        addonDB.MsgBuffer[sender][id].LastUpdate = now
+        addonDB.MsgBuffer[sender][id][tonumber(startIndex)] = {
+            endIndex = tonumber(endIndex),
+            msgPart = msgPart,
+        }
+
+        for senderName, buffer in pairs(addonDB.MsgBuffer) do
+            for i, data in pairs(buffer) do
+                -- Create full payload from parts
+                local payload, idx = "", 0
+                while idx < data.totalLength do
+                    if data[idx + 1] then
+                        idx = data[idx + 1].endIndex
+                    else
+                        break
+                    end
+                end
+                -- Skip if parts are missing
+                if idx ~= data.totalLength then
+                    -- Drop if too old
+                    if (data.LastUpdate + 10) < now then
+                        -- Clear buffer
+                        table.remove(buffer, i)
+                    end
+                    break
+                end
+                -- Concatenate payload
+                idx = 1
+                while idx < data.totalLength do
+                    if data[idx] then
+                        payload = payload .. data[idx].msgPart
+                        idx = data[idx].endIndex + 1
+                    else
+                        break
+                    end
+                end
+                -- TODO do something with payload
+                -- Clear buffer
+                addonDB.MsgBuffer[senderName][i] = nil
+            end
         end
     end
 end)
@@ -4239,26 +4699,45 @@ local function SlashCommandHandler(msg)
         print("Options:")
         print("  help: Show this help menu.")
         print("  stats: Show stats of the addon.")
+    elseif msg == "scale up" then
+        addonDB.Scaling = addonDB.Scaling + 0.1
+        print("Scaling after Reload: " .. addonDB.Scaling)
+    elseif msg == "scale down" then
+        addonDB.Scaling = addonDB.Scaling - 0.1
+        print("Scaling after Reload: " .. addonDB.Scaling)
+    elseif msg == "msg test" then
+        if addonDB.ChatMsgRegistered then
+            for _, v in pairs(addonDB.Configs) do
+                for _, p in pairs(v.PlayerInfos) do
+                    local success = C_ChatInfo.SendAddonMessage("RaidTablesShare", p.Name .. ":" .. p.Class .. ":"..p.Rare..":"..p.Tier..":"..p.Normal, "PARTY", UnitName("player"))
+                    if success then
+                        print("[SUCCESS] RaidTables: Message transmitted!")
+                    else
+                        print("[FAILURE] RaidTables: Message NOT transmitted!")
+                    end
+                    return
+                end
+            end
+        end
     elseif msg == "stats" then
         print("Created Frames = "..createdFrameCount)
-        print("Raid Configs = "..#configs)
-        print("Free Raid Entities = "..#widgets.FreeSetups)
-        print("Free Player Entities = "..#widgets.FreePlayers)
-        print("Player List Items = "..#widgets.Dialogs.AddPlayers.PlayerFrames)
-        print("Free Player List Items = "..#widgets.Dialogs.AddPlayers.FreePlayerFrames)
+        print("Raid Configs = "..#addonDB.Configs)
+        print("Free Raid Entities = "..#addonDB.Widgets.FreeSetups)
+        print("Free Player Entities = "..#addonDB.Widgets.FreePlayers)
+        print("Player List Items = "..#addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
+        print("Free Player List Items = "..#addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames)
     elseif msg == "roll test" then
         addonDB.Testing = true
         local item = select(2, GetItemInfo("|cffa335ee|Hitem:196590::::::::60:577::6:4:7188:6652:1485:6646:1:28:752:::|h[Dreadful Topaz Forgestone]|h|r"))
-        table.insert(widgets.Dialogs.Roll.Items, item)
+        table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
         item = select(2, GetItemInfo("|cffa335ee|Hitem:19019::::::::120:265::5::::|h[Thunderfury, Blessed Blade of the Windseeker]|h|r"))
-        table.insert(widgets.Dialogs.Roll.Items, item)
+        table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
         item = select(2, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
-        table.insert(widgets.Dialogs.Roll.Items, item)
+        table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
 
-        addonDB.Tracking.Active = true
-        for _, s in pairs(widgets.Setups) do
+        for _, s in pairs(addonDB.Widgets.Setups) do
             if addonDB.Tracking.Name == nil and s.Tab.Button.pushed then
-                addonDB.Tracking.Name = s.Name
+                EnableTracking(s.name, false)
                 local c = color.Highlight
                 s.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
             elseif s.Name == addonDB.Tracking.Name then
@@ -4280,10 +4759,10 @@ local function SlashCommandHandler(msg)
 
         HandleLootAssignment()
     else
-        if not widgets.Addon:IsShown() then
-            widgets.Addon:Show()
+        if not addonDB.Widgets.Addon:IsShown() then
+            addonDB.Widgets.Addon:Show()
         else 
-            widgets.Addon:Hide()
+            addonDB.Widgets.Addon:Hide()
         end
     end
 end
@@ -4292,31 +4771,31 @@ SlashCmdList.RAID_TABLES_COMMAND = SlashCommandHandler
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Minimap Button
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Minimap = CreateFrame("Button", nil, Minimap)
-widgets.Minimap:SetSize(32, 32)
-widgets.Minimap:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 10, -50)
-widgets.Minimap:SetNormalTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
-widgets.Minimap:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-widgets.Minimap:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-widgets.Minimap:SetScript("OnEnter", function(self)
+addonDB.Widgets.Minimap = CreateFrame("Button", nil, Minimap)
+SetSize(addonDB.Widgets.Minimap, 32, 32)
+SetPoint(addonDB.Widgets.Minimap, "TOPLEFT", Minimap, "TOPLEFT", 10, -50)
+addonDB.Widgets.Minimap:SetNormalTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
+addonDB.Widgets.Minimap:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+addonDB.Widgets.Minimap:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+addonDB.Widgets.Minimap:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:SetText("MyAddon")
     GameTooltip:AddLine("Click to show MyAddon frame", 1, 1, 1)
     GameTooltip:Show()
 end)
-widgets.Minimap:SetScript("OnLeave", function() GameTooltip:Hide() end)
-widgets.Minimap:SetScript("OnClick", function(self)
-    if widgets.Addon:IsShown() then
+addonDB.Widgets.Minimap:SetScript("OnLeave", function() GameTooltip:Hide() end)
+addonDB.Widgets.Minimap:SetScript("OnClick", function(self)
+    if addonDB.Widgets.Addon:IsShown() then
         if IsDialogShown() then
             return
         end
-        widgets.Addon:Hide()
+        addonDB.Widgets.Addon:Hide()
     else
-        widgets.Addon:Show()
+        addonDB.Widgets.Addon:Show()
     end
 end)
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Hide Addon Frame Initially
 -----------------------------------------------------------------------------------------------------------------------
-widgets.Addon:Hide()
+addonDB.Widgets.Addon:Hide()
