@@ -941,7 +941,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.Remove == nil then
         player.Remove = {}
         player.Remove.Button, player.Remove.Text = CreateButton(player.Container, "X", 30, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.Remove.Button, "TOPLEFT", 15, -3)
+        SetPoint(player.Remove.Button, "TOPLEFT", 5, -3)
         player.Remove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -984,7 +984,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         player.NameText:SetText(name)
         player.NameText:SetTextColor(colour.r, colour.g, colour.b)
     else
-        player.NameText = CreateLabel(name, player.Container, 75, -10, colour)
+        player.NameText = CreateLabel(name, player.Container, 65, -10, colour)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -993,7 +993,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareText then
         player.RareText:SetText(rare)
     else
-        player.RareText = CreateLabel(rare, player.Container, 450, -10, color.White)
+        player.RareText = CreateLabel(rare, player.Container, 440, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1002,7 +1002,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareDiffText then
         player.RareDiffText:SetText(0)
     else
-        player.RareDiffText = CreateLabel(0, player.Container, 510, -10, color.White)
+        player.RareDiffText = CreateLabel(0, player.Container, 500, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1011,7 +1011,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareAdd == nil then
         player.RareAdd = {}
         player.RareAdd.Button, player.RareAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.RareAdd.Button, "TOPLEFT", 560, -3)
+        SetPoint(player.RareAdd.Button, "TOPLEFT", 550, -3)
         player.RareAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1064,7 +1064,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1083,7 +1083,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareRemove == nil then
         player.RareRemove = {}
         player.RareRemove.Button, player.RareRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.RareRemove.Button, "TOPLEFT", 620, -3)
+        SetPoint(player.RareRemove.Button, "TOPLEFT", 610, -3)
         player.RareRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1136,7 +1136,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1155,7 +1155,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierText then
         player.TierText:SetText(tier)
     else
-        player.TierText = CreateLabel(tier, player.Container, 755, -10, color.White)
+        player.TierText = CreateLabel(tier, player.Container, 745, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1164,7 +1164,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierDiffText then
         player.TierDiffText:SetText(0)
     else
-        player.TierDiffText = CreateLabel(0, player.Container, 815, -10, color.White)
+        player.TierDiffText = CreateLabel(0, player.Container, 805, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1173,7 +1173,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierAdd == nil then
         player.TierAdd = {}
         player.TierAdd.Button, player.TierAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.TierAdd.Button, "TOPLEFT", 865, -3)
+        SetPoint(player.TierAdd.Button, "TOPLEFT", 855, -3)
         player.TierAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1226,7 +1226,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1245,7 +1245,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierRemove == nil then
         player.TierRemove = {}
         player.TierRemove.Button, player.TierRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.TierRemove.Button, "TOPLEFT", 925, -3)
+        SetPoint(player.TierRemove.Button, "TOPLEFT", 915, -3)
         player.TierRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1298,7 +1298,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1317,7 +1317,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalText then
         player.NormalText:SetText(normal)
     else
-        player.NormalText = CreateLabel(normal, player.Container, 1060, -10, color.White)
+        player.NormalText = CreateLabel(normal, player.Container, 1050, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1326,7 +1326,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalDiffText then
         player.NormalDiffText:SetText(0)
     else
-        player.NormalDiffText = CreateLabel(0, player.Container, 1120, -10, color.White)
+        player.NormalDiffText = CreateLabel(0, player.Container, 1110, -10, color.White)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1335,7 +1335,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalAdd == nil then
         player.NormalAdd = {}
         player.NormalAdd.Button, player.NormalAdd.Text = CreateButton(player.Container, "Add", 50, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.NormalAdd.Button, "TOPLEFT", 1170, -3)
+        SetPoint(player.NormalAdd.Button, "TOPLEFT", 1160, -3)
         player.NormalAdd.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1388,7 +1388,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1407,7 +1407,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalRemove == nil then
         player.NormalRemove = {}
         player.NormalRemove.Button, player.NormalRemove.Text = CreateButton(player.Container, "Remove", 80, 28, color.DarkGray, color.DarkGray, color.Gold)
-        SetPoint(player.NormalRemove.Button, "TOPLEFT", 1230, -3)
+        SetPoint(player.NormalRemove.Button, "TOPLEFT", 1220, -3)
         player.NormalRemove.Button:SetScript("OnEnter", function(self)
             local gold = color.Gold
             self:SetBackdropBorderColor(gold.r, gold.g, gold.b, gold.a)
@@ -1460,7 +1460,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
             table.sort(setup.Players, activeOrder["Callback"])
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1577,7 +1577,7 @@ local function SetupNewEntry(cfg, show)
             table.sort(setup.Players, orderConfigs[orderIdx].Callback)
             ApplyToEach(setup.Players, function(k, v) 
                 sortedOrder[v.PlayerName] = k 
-                SetPoint(v.Container, "TOPLEFT", 0, vOffset)
+                SetPoint(v.Container, "TOPLEFT", 10, vOffset)
                 vOffset = vOffset - 32
             end)
             SetPoint(setup.TableBottomLine, "TOPLEFT", 5, vOffset + 2)
@@ -1688,7 +1688,7 @@ local function SetupNewEntry(cfg, show)
             player.Container:Show()
             player.Container:SetParent(setup.Table)
         end
-        CreatePlayerFrame(player, cfg, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, vOffset)
+        CreatePlayerFrame(player, cfg, setup, setup.Table, playerInfo, GetWidth(setup.Table) - 10, 10, vOffset)
         table.insert(setup.Players, player)
         vOffset = vOffset - 32
     end
@@ -3304,7 +3304,7 @@ local function SetupUserInterface()
                 player.Container:Show()
                 player.Container:SetParent(setup.Table)
             end
-            CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, #config.PlayerInfos * -32)
+            CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table) - 10, 10, #config.PlayerInfos * -32)
             -- Deactive order button
             for _, btn in pairs(setup.Order) do
                 btn.Button:Enable()
@@ -3799,7 +3799,7 @@ local function SetupUserInterface()
                     player.Container:Show()
                     player.Container:SetParent(setup.Table)
                 end
-                CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table), 0, #config.PlayerInfos * -32)
+                CreatePlayerFrame(player, config, setup, setup.Table, playerInfo, GetWidth(setup.Table) - 10, 10, #config.PlayerInfos * -32)
 
                 -- Insert player data
                 table.insert(setup.Players, player)
