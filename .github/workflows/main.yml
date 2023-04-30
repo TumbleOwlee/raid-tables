@@ -26,7 +26,7 @@ jobs:
           mkdir -p ./RaidTables/libs/LibDeflate
           mkdir -p ./RaidTables/libs/LibSerialize
           mkdir -p ./RaidTables/libs/LibStub
-          cp -r ./RaidTables.lua ./RaidTables.toc ./embeds.xml 
+          cp -r ./RaidTables.lua ./RaidTables.toc ./embeds.xml ./RaidTables
           cp -r ./libs/LibDeflate/LibDeflate.lua ./RaidTables/libs/LibDeflate/
           cp -r ./libs/LibSerialize/LibSerialize.lua ./RaidTables/libs/LibSerialize/
           cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
