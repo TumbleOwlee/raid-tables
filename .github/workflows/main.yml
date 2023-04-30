@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
     - main
+    
+env:
+  VERSION: "0.1.0"
 
 jobs:
   build:
@@ -20,15 +23,11 @@ jobs:
         with:
           submodules: 'recursive'
           
-      - name: Update nightly tag
+      - name: Update ${{ env.VERSION }} tag
         uses: EndBug/latest-tag@latest
         if: github.ref == 'refs/heads/main'
         with:
-          ref: nightly
-     
-      - name: Checkout nightly
-        run: |
-          git checkout nightly
+          ref: release-${{ env.VERSION }}
       
       - name: Collect all files
         run: |
@@ -40,13 +39,13 @@ jobs:
           cp -r ./libs/LibDeflate/LibDeflate.lua ./RaidTables/libs/LibDeflate/
           cp -r ./libs/LibSerialize/LibSerialize.lua ./RaidTables/libs/LibSerialize/
           cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
-          zip -r RaidTables-Nightly.zip ./RaidTables
-          tar -czvf RaidTables-Nightly.tar.gz ./RaidTables
+          zip -r RaidTables-${{ env.VERSION }}.zip ./RaidTables
+          tar -czvf RaidTables-${{ env.VERSION }}.tar.gz ./RaidTables
           
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           prerelease: true
-          name: nightly
-          tag_name: nightly
-          files: RaidTables-Nightly.zip
+          name: ${{ env.VERSION }}
+          tag_name: release-${{ env.VERSION }}
+          files: RaidTables-${{ env.VERSION }}.zip
