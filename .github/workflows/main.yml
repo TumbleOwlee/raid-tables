@@ -33,9 +33,26 @@ jobs:
           zip -r RaidTables-Nightly.zip ./RaidTables
           tar -czvf RaidTables-Nightly.tar.gz ./RaidTables
           
+      - name: Delete nightly tag
+        uses: actions/delete-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          
+      - name: Create nightly tag
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          release_name: Nightly Release $(date '+%Y-%m-%d')
+          draft: false
+          prerelease: true
+          
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           prerelease: true
-          name: Nightly
+          name: nightly
           files: RaidTables-Nightly.zip
