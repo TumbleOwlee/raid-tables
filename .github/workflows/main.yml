@@ -9,7 +9,7 @@ on:
     - main
     
 env:
-  VERSION: "0.1.0"
+  RELEASE_NAME: nightly
 
 jobs:
   build:
@@ -23,11 +23,11 @@ jobs:
         with:
           submodules: 'recursive'
           
-      - name: Update ${{ env.VERSION }} tag
+      - name: Update ${{ env.RELEASE_NAME }} tag
         uses: EndBug/latest-tag@latest
         if: github.ref == 'refs/heads/main'
         with:
-          ref: release-${{ env.VERSION }}
+          ref: ${{ env.RELEASE_NAME }}
       
       - name: Collect all files
         run: |
@@ -39,13 +39,15 @@ jobs:
           cp -r ./libs/LibDeflate/LibDeflate.lua ./RaidTables/libs/LibDeflate/
           cp -r ./libs/LibSerialize/LibSerialize.lua ./RaidTables/libs/LibSerialize/
           cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
-          zip -r RaidTables-${{ env.VERSION }}.zip ./RaidTables
-          tar -czvf RaidTables-${{ env.VERSION }}.tar.gz ./RaidTables
+          zip -r RaidTables-${{ env.RELEASE_NAME }}.zip ./RaidTables
+          tar -czvf RaidTables-${{ env.RELEASE_NAME }}.tar.gz ./RaidTables
           
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           prerelease: false
-          name: ${{ env.VERSION }}
-          tag_name: release-${{ env.VERSION }}
-          files: RaidTables-${{ env.VERSION }}.zip
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.RELEASE_NAME }}
+          files: |
+            RaidTables-${{ env.RELEASE_NAME }}.zip
+            RaidTables-${{ env.RELEASE_NAME }}.tar.gz
