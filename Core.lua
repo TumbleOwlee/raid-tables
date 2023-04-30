@@ -16,8 +16,17 @@ local addonDB = {
     },
     Configs = {},
     Options = {
-        TierItems = {},
-        RareItems = {},
+        TierItems = {
+            196488, 196598, 196603, 196593,
+            196587, 196597, 196602, 196592,
+            196586, 196596, 196601, 196591,
+            196589, 196599, 196604, 196594,
+            196590, 196600, 196605, 196595,
+        },
+        RareItems = {
+            195480, 194301, 195526, 195527,
+        },
+        Scaling = 1.0,
     },
     Tracking = {
         Active = false,
@@ -25,39 +34,20 @@ local addonDB = {
     },
     Testing = true,
     Sharing = false,
-    Scaling = 1.0
-}
-
------------------------------------------------------------------------------------------------------------------------
--- Rare Items
------------------------------------------------------------------------------------------------------------------------
-local RareItems = {
-    195480, 194301, 195526, 195527,
-}
-
------------------------------------------------------------------------------------------------------------------------
--- Tier Items
------------------------------------------------------------------------------------------------------------------------
-local TierItems = {
-    196488, 196598, 196603, 196593,
-    196587, 196597, 196602, 196592,
-    196586, 196596, 196601, 196591,
-    196589, 196599, 196604, 196594,
-    196590, 196600, 196605, 196595,
 }
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Get Scale agnostic Width
 -----------------------------------------------------------------------------------------------------------------------
 local function GetWidth(frame)
-    return frame:GetWidth() / addonDB.Scaling
+    return frame:GetWidth() / addonDB.Options.Scaling
 end
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Get Scale Agnostic Height
 -----------------------------------------------------------------------------------------------------------------------
 local function GetHeight(frame)
-    return frame:GetHeight() / addonDB.Scaling
+    return frame:GetHeight() / addonDB.Options.Scaling
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -67,7 +57,7 @@ local function Agnostic(num)
     if not num then
         return nil
     end
-    return num / addonDB.Scaling
+    return num / addonDB.Options.Scaling
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -77,7 +67,7 @@ local function Scaled(num)
     if not num then
         return nil
     end
-    return num * addonDB.Scaling
+    return num * addonDB.Options.Scaling
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -2160,7 +2150,7 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.Dialogs.Options = {}
     addonDB.Widgets.Dialogs.Options.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-    SetSize(addonDB.Widgets.Dialogs.Options.Frame, 650, 600)
+    SetSize(addonDB.Widgets.Dialogs.Options.Frame, 650, 320)
     addonDB.Widgets.Dialogs.Options.Frame:SetMovable(true)
     addonDB.Widgets.Dialogs.Options.Frame:EnableMouse(true)
     addonDB.Widgets.Dialogs.Options.Frame:RegisterForDrag("LeftButton")
@@ -2180,7 +2170,7 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Header
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 10, addonDB.Widgets.Dialogs.Options.Frame, 5, -10, true)
+    addonDB.Widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 20, addonDB.Widgets.Dialogs.Options.Frame, 10, -10, false)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Close Button 
@@ -2194,12 +2184,27 @@ local function SetupUserInterface()
     AddHover(addonDB.Widgets.Dialogs.Options.Close.Button)
 
     -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Tier Identifier Frame 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.TierIdContainer = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Options.Frame, "BackdropTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdContainer, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 20)
+    SetHeight(addonDB.Widgets.Dialogs.Options.TierIdContainer, 60)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdContainer, "TOP", addonDB.Widgets.Dialogs.Options.Frame, "TOP", 0, -30)
+    addonDB.Widgets.Dialogs.Options.TierIdContainer:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Options.TierIdContainer:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
+    addonDB.Widgets.Dialogs.Options.TierIdContainer:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
+
+    -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Tier Identifier Inputfield
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.Frame, "InputBoxTemplate")
-    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 60)
+    addonDB.Widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.TierIdContainer, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.TierIdContainer) - 40)
     SetHeight(addonDB.Widgets.Dialogs.Options.TierIdInputField, 30)
-    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.Frame, "TOP", 0, -50)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.TierIdContainer, "TOP", 0, -20)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetAutoFocus(false)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetMaxLetters(0)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
@@ -2229,16 +2234,31 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Tier Identifier Label 
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", addonDB.Widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+    addonDB.Widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", addonDB.Widgets.Dialogs.Options.TierIdContainer, nil, nil, color.Gold)
     SetPoint(addonDB.Widgets.Dialogs.Options.TierIdLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOPLEFT", 10, 0)
 
     -----------------------------------------------------------------------------------------------------------------------
-    -- Options Dialog: Tier Identifier Inputfield
+    -- Options Dialog: Rare Identifier Frame 
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.Frame, "InputBoxTemplate")
-    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 60)
+    addonDB.Widgets.Dialogs.Options.RareIdContainer = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Options.Frame, "BackdropTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdContainer, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 20)
+    SetHeight(addonDB.Widgets.Dialogs.Options.RareIdContainer, 60)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdContainer, "TOP", addonDB.Widgets.Dialogs.Options.TierIdContainer, "BOTTOM", 0, -10)
+    addonDB.Widgets.Dialogs.Options.RareIdContainer:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Options.RareIdContainer:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
+    addonDB.Widgets.Dialogs.Options.RareIdContainer:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Rare Identifier Inputfield
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.RareIdContainer, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.RareIdContainer) - 40)
     SetHeight(addonDB.Widgets.Dialogs.Options.RareIdInputField, 30)
-    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.Frame, "TOP", 0, -100)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.RareIdContainer, "TOP", 0, -20)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetAutoFocus(false)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetMaxLetters(0)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
@@ -2268,8 +2288,84 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Rare Identifier Label 
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.RareIdLabel = CreateLabel("Rare Identifiers:", addonDB.Widgets.Dialogs.Options.Frame, nil, nil, color.Gold)
+    addonDB.Widgets.Dialogs.Options.RareIdLabel = CreateLabel("Rare Identifiers:", addonDB.Widgets.Dialogs.Options.RareIdContainer, nil, nil, color.Gold)
     SetPoint(addonDB.Widgets.Dialogs.Options.RareIdLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOPLEFT", 10, 0)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Scaling Frame 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.ScalingContainer = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.Options.Frame, "BackdropTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.ScalingContainer, GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 20)
+    SetHeight(addonDB.Widgets.Dialogs.Options.ScalingContainer, 100)
+    SetPoint(addonDB.Widgets.Dialogs.Options.ScalingContainer, "TOP", addonDB.Widgets.Dialogs.Options.RareIdContainer, "BOTTOM", 0, -10)
+    addonDB.Widgets.Dialogs.Options.ScalingContainer:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Dialogs.Options.ScalingContainer:SetBackdropColor(color.DarkGray.r, color.DarkGray.g, color.DarkGray.b, color.DarkGray.a)
+    addonDB.Widgets.Dialogs.Options.ScalingContainer:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, color.LightGray.a)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Scaling Inputfield
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.ScalingInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.ScalingContainer, "InputBoxTemplate")
+    SetWidth(addonDB.Widgets.Dialogs.Options.ScalingInputField, (GetWidth(addonDB.Widgets.Dialogs.Options.ScalingContainer) - 90) * 0.25)
+    SetHeight(addonDB.Widgets.Dialogs.Options.ScalingInputField, 30)
+    SetPoint(addonDB.Widgets.Dialogs.Options.ScalingInputField, "TOPLEFT", addonDB.Widgets.Dialogs.Options.ScalingContainer, "TOPLEFT", 70, -30)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetText(addonDB.Options.Scaling)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetMaxLetters(5)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetScript("OnTextChanged", function(self) 
+        local num = tonumber(addonDB.Widgets.Dialogs.Options.ScalingInputField:GetText())
+        if num then
+            if num == addonDB.Options.Scaling then
+                local c = color.Gold
+                self:SetTextColor(c.r, c.g, c.b, c.a)
+            else
+                local c = color.White
+                self:SetTextColor(c.r, c.g, c.b, c.a)
+            end
+        else
+            local c = color.Red
+            self:SetTextColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetScript("OnEnterPressed", function(self) 
+        local num = tonumber(addonDB.Widgets.Dialogs.Options.ScalingInputField:GetText())
+        if num then
+            -- Limit to 0.5 <= num <= 1.5
+            num = math.max(0.5, math.min(1.5, num))
+            addonDB.Widgets.Dialogs.Options.ScalingInputField:SetText(num)
+            addonDB.Options.Scaling = num
+        else
+            local c = color.Red
+            addonDB.Widgets.Dialogs.Options.ScalingInputField:SetTextColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    addonDB.Widgets.Dialogs.Options.ScalingInputField:SetScript("OnEscapePressed", function(self) 
+        self:SetText(addonDB.Options.Scaling)
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Scaling Label
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.ScalingLabel = CreateLabel("Scaling:", addonDB.Widgets.Dialogs.Options.ScalingContainer, nil, nil, color.Gold)
+    SetPoint(addonDB.Widgets.Dialogs.Options.ScalingLabel, "BOTTOMLEFT", addonDB.Widgets.Dialogs.Options.ScalingInputField, "TOPLEFT", 10, 0)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Scaling Description
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.ScalingDescription = CreateLabel("Allows to scale the UI up or down. A value of 1.0 is the default. All values between 0.5 and 1.5 are supported.", addonDB.Widgets.Dialogs.Options.ScalingContainer, nil, nil, color.White)
+    addonDB.Widgets.Dialogs.Options.ScalingDescription:SetJustifyH("LEFT")
+    SetPoint(addonDB.Widgets.Dialogs.Options.ScalingDescription, "TOPLEFT", addonDB.Widgets.Dialogs.Options.ScalingInputField, "TOPRIGHT", 20, 13)
+    SetWidth(addonDB.Widgets.Dialogs.Options.ScalingDescription, GetWidth(addonDB.Widgets.Dialogs.Options.ScalingContainer) * 0.5)
+
+    addonDB.Widgets.Dialogs.Options.ScalingWarning = CreateLabel("IMPORTANT: You have to /reload to apply the scaling change.", addonDB.Widgets.Dialogs.Options.ScalingContainer, nil, nil, color.Red)
+    addonDB.Widgets.Dialogs.Options.ScalingWarning:SetJustifyH("LEFT")
+    SetPoint(addonDB.Widgets.Dialogs.Options.ScalingWarning, "TOPLEFT", addonDB.Widgets.Dialogs.Options.ScalingDescription, "BOTTOMLEFT", 0, -5)
+    SetWidth(addonDB.Widgets.Dialogs.Options.ScalingWarning, GetWidth(addonDB.Widgets.Dialogs.Options.ScalingContainer) * 0.5)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Print Dialog
@@ -4520,7 +4616,8 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         -- Get SavedVariables
         ---------------------------------------------------------------------------------------------------------------
         local savedVariable = RaidTablesDB or {}
-        addonDB.Scaling = savedVariable.Scaling or 1.0
+        addonDB.Configs = savedVariable.Configs or addonDB.Configs
+        addonDB.Options = savedVariable.Options or addonDB.Options
 
         ---------------------------------------------------------------------------------------------------------------
         -- Setup User Interface
@@ -4528,33 +4625,22 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         SetupUserInterface()
 
         ---------------------------------------------------------------------------------------------------------------
-        -- Load Configuration Items
+        -- Setup Configuration Frames
         ---------------------------------------------------------------------------------------------------------------
-        if savedVariable.Config then
-            local hasEntries = false
-
-            for k, v in pairs(savedVariable.Config) do
-                table.insert(addonDB.Configs, v)
-                SetupNewEntry(v, k == 1)
-                hasEntries = true
-            end
-
-            if not hasEntries then
-                local c = color.LightGray
-                addonDB.Widgets.Export.Button:Hide()
-                addonDB.Widgets.Save.Button:Hide()
-                addonDB.Widgets.Print.Button:Hide()
-                addonDB.Widgets.AddPlayers.Button:Disable()
-                addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
-            end
+        local hasEntries = false
+        for k, v in pairs(addonDB.Configs) do
+            SetupNewEntry(v, k == 1)
+            hasEntries = true
         end
 
-        ---------------------------------------------------------------------------------------------------------------
-        -- Load Options
-        ---------------------------------------------------------------------------------------------------------------
-        addonDB.Options = {}
-        addonDB.Options.TierItems = (savedVariable.Options and savedVariable.Options.TierItems) or TierItems
-        addonDB.Options.RareItems = (savedVariable.Options and savedVariable.Options.RareItems) or RareItems
+        if not hasEntries then
+            local c = color.LightGray
+            addonDB.Widgets.Export.Button:Hide()
+            addonDB.Widgets.Save.Button:Hide()
+            addonDB.Widgets.Print.Button:Hide()
+            addonDB.Widgets.AddPlayers.Button:Disable()
+            addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
+        end
         
         ---------------------------------------------------------------------------------------------------------------
         -- Registery Addon Message
@@ -4572,9 +4658,8 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
 
     elseif event == "PLAYER_LOGOUT" then
         RaidTablesDB = {}
-        RaidTablesDB.Config = addonDB.Configs
+        RaidTablesDB.Configs = addonDB.Configs
         RaidTablesDB.Options = addonDB.Options
-        RaidTablesDB.Scaling = addonDB.Scaling
 
     elseif event == "RAID_INSTANCE_WELCOME" then
         if not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
@@ -4700,11 +4785,11 @@ local function SlashCommandHandler(msg)
         print("  help: Show this help menu.")
         print("  stats: Show stats of the addon.")
     elseif msg == "scale up" then
-        addonDB.Scaling = addonDB.Scaling + 0.1
-        print("Scaling after Reload: " .. addonDB.Scaling)
+        addonDB.Options.Scaling = addonDB.Options.Scaling + 0.1
+        print("Scaling after Reload: " .. addonDB.Options.Scaling)
     elseif msg == "scale down" then
-        addonDB.Scaling = addonDB.Scaling - 0.1
-        print("Scaling after Reload: " .. addonDB.Scaling)
+        addonDB.Options.Scaling = addonDB.Options.Scaling - 0.1
+        print("Scaling after Reload: " .. addonDB.Options.Scaling)
     elseif msg == "msg test" then
         if addonDB.ChatMsgRegistered then
             for _, v in pairs(addonDB.Configs) do
