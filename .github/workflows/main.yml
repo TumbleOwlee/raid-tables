@@ -43,11 +43,10 @@ jobs:
           zip -r RaidTables-Nightly.zip ./RaidTables
           tar -czvf RaidTables-Nightly.tar.gz ./RaidTables
           
-
-          
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           prerelease: true
           name: nightly
+          tag_name: nightly
           files: RaidTables-Nightly.zip
