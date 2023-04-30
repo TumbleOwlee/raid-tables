@@ -1,0 +1,41 @@
+name: Nightly Build
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          
+      - name: Collect all files
+        run: |
+          mkdir ./RaidTables
+          mkdir -p ./RaidTables/libs/LibDeflate
+          mkdir -p ./RaidTables/libs/LibSerialize
+          mkdir -p ./RaidTables/libs/LibStub
+          cp -r ./RaidTables.lua ./RaidTables.toc ./embeds.xml 
+          cp -r ./libs/LibDeflate/LibDeflate.lua ./RaidTables/libs/LibDeflate/
+          cp -r ./libs/LibSerialize/LibSerialize.lua ./RaidTables/libs/LibSerialize/
+          cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
+          zip -r RaidTables-Nightly.zip ./RaidTables
+          tar -czvf RaidTables-Nightly.tar.gz ./RaidTables
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          name: Nightly
+          files: RaidTables-Nightly.zip
