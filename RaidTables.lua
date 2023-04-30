@@ -2,7 +2,7 @@
 -- Addon Meta Information
 -----------------------------------------------------------------------------------------------------------------------
 local addonName = "RaidTables"
-local author = "Owleé-Blackmoore"
+local author = "Owleé-Blackmoore (EU)"
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Setup Tables And Variables for Easy Access
@@ -27,6 +27,10 @@ local addonDB = {
             195480, 194301, 195526, 195527,
         },
         Scaling = 1.0,
+        Minimap = {
+            X = 10,
+            Y = 10,
+        },
     },
     Tracking = {
         Active = false,
@@ -35,6 +39,20 @@ local addonDB = {
     Testing = true,
     Sharing = false,
 }
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Merge Tables
+-----------------------------------------------------------------------------------------------------------------------
+local function MergeTables(t1, t2)
+    local merged = {}
+    for k, v in pairs(t1) do
+        merged[k] = v
+    end
+    for k, v in pairs(t2) do
+        merged[k] = v
+    end
+    return merged
+end
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Get Scale agnostic Width
@@ -532,19 +550,28 @@ local function ArrayToString(array)
 end
 
 -----------------------------------------------------------------------------------------------------------------------
--- Serialize Configuration
+-- Serialize Table
 -----------------------------------------------------------------------------------------------------------------------
-local function SerializeConfig(config)
-    local serialized = LibSerialize:SerializeEx({errorOnUnserializableType = false}, config)
+local function Serialize(t)
+    local serialized = LibSerialize:SerializeEx({errorOnUnserializableType = false}, t)
     local compressed = LibDeflate:CompressDeflate(serialized)
     local encoded = LibDeflate:EncodeForPrint(compressed)
     return encoded
 end
 
 -----------------------------------------------------------------------------------------------------------------------
--- Deserialize Configuration
+-- Serialize Configuration
 -----------------------------------------------------------------------------------------------------------------------
-local function DeserializeConfig(encoded)
+local function SerializeConfig(config)
+    local playerName, realm = UnitFullName("player")
+    config.Sharer = playerName.."-"..realm
+    return Serialize(config)
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Deserialize Table
+-----------------------------------------------------------------------------------------------------------------------
+local function Deserialize(encoded)
     local compressed = LibDeflate:DecodeForPrint(encoded)
     local serialized = LibDeflate:DecompressDeflate(compressed)
     local success, deserialized = LibSerialize:Deserialize(serialized)
@@ -565,7 +592,32 @@ local function ShareConfiguration(config)
             local endIndex = math.min(written + 150, #encoded)
             local substr = string.sub(encoded, written, endIndex)
 
-            local success = C_ChatInfo.SendAddonMessage("RaidTablesShare", id.."$|$"..written.."$|$"..endIndex.."$|$"..#encoded.."$|$"..substr, (IsInRaid() and "RAID") or (IsInGroup() and "PARTY") or "WHISPER", UnitName("player"))
+            local success = C_ChatInfo.SendAddonMessage("RTConfig", id.."$|$"..written.."$|$"..endIndex.."$|$"..#encoded.."$|$"..substr, (IsInRaid() and "RAID") or (IsInGroup() and "PARTY") or "WHISPER", UnitName("player"))
+            if not success then
+                print("[ERROR] RaidTables: Sharing failed!")
+                break
+            end
+
+            written = endIndex + 1
+        end
+    end
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Share Summary
+-----------------------------------------------------------------------------------------------------------------------
+local function ShareLootSummary(items) 
+    if addonDB.Sharing and addonDB.Tracking.Active then
+        local written = 1
+        local encoded = Serialize(items)
+        addonDB.Identifier = addonDB.Identifier or 0
+        local id = addonDB.Identifier
+        addonDB.Identifier = addonDB.Identifier + 1
+        while written < #encoded do
+            local endIndex = math.min(written + 150, #encoded)
+            local substr = string.sub(encoded, written, endIndex)
+
+            local success = C_ChatInfo.SendAddonMessage("RTSummary", id.."$|$"..written.."$|$"..endIndex.."$|$"..#encoded.."$|$"..substr, (IsInRaid() and "RAID") or (IsInGroup() and "PARTY") or "WHISPER", UnitName("player"))
             if not success then
                 print("[ERROR] RaidTables: Sharing failed!")
                 break
@@ -679,7 +731,7 @@ local function CreateLine(width, parent, x, y, colour)
     local line = parent:CreateTexture(nil, "ARTWORK")
     local c = colour or color.Gold
     line:SetColorTexture(c.r, c.g, c.b) -- set the color of the line to white
-    SetHeight(line, 1) -- set the height of the line
+    SetHeight(line, 2) -- set the height of the line
     SetWidth(line, width)
     SetPoint(line, "TOPLEFT", x, y)
     return line
@@ -802,7 +854,6 @@ local function HandleLootAssignment()
         ---------------------------------------------------------------------------------------------------------------
         -- For each Assignment create List Item in Summary View
         ---------------------------------------------------------------------------------------------------------------
-        local yOffset = -30
         for _, assignment in pairs(addonDB.Widgets.Dialogs.Roll.AssignmentList) do
             -----------------------------------------------------------------------------------------------------------
             -- Check if we can reuse a previous freed frame
@@ -816,7 +867,7 @@ local function HandleLootAssignment()
                 item = {}
                 -- Setup frame
                 item.Frame = CreateFrame("Frame", nil, addonDB.Widgets.Summary.Frame, "BackdropTemplate")
-                SetSize(item.Frame, GetWidth(addonDB.Widgets.Summary.Frame) - 20, 84)
+                SetSize(item.Frame, GetWidth(addonDB.Widgets.Summary.Frame) - 20, 52)
                 item.Frame:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8x8",
                     edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -827,8 +878,8 @@ local function HandleLootAssignment()
 
                 -- Setup item icon
                 item.ItemIcon = CreateFrame("Frame", nil, item.Frame, "BackdropTemplate")
-                SetSize(item.ItemIcon, 64, 64)
-                SetPoint(item.ItemIcon, "TOPLEFT", 40, -10)
+                SetSize(item.ItemIcon, 32, 32)
+                SetPoint(item.ItemIcon, "TOPLEFT", 20, -10)
                 item.ItemIcon:SetBackdrop({
                     bgFile = "Interface\\Buttons\\WHITE8x8",
                     edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -841,11 +892,11 @@ local function HandleLootAssignment()
                 item.ItemTexture:SetAllPoints()
 
                 -- Setup Player Label
-                item.PlayerLabel = CreateLabel("", item.Frame, 150, 0, color.Gold, "LEFT", 14)
-
-                -- Insert
-                table.insert(addonDB.Widgets.Summary.Items, item)
+                item.PlayerLabel = CreateLabel("", item.Frame, 70, 0, color.Gold, "LEFT", 12)
             end
+
+            -- Insert
+            table.insert(addonDB.Widgets.Summary.Items, item)
 
             -----------------------------------------------------------------------------------------------------------
             -- Show Item Frame
@@ -862,7 +913,7 @@ local function HandleLootAssignment()
                 GameTooltip:SetHyperlink(assignment.ItemLink)
                 GameTooltip:Show()
             end)
-            addonDB.Widgets.Dialogs.Roll.ItemIcon:SetScript("OnLeave", function()
+            item.ItemIcon:SetScript("OnLeave", function()
                 GameTooltip:Hide()
             end)
 
@@ -876,14 +927,13 @@ local function HandleLootAssignment()
             -----------------------------------------------------------------------------------------------------------
             -- Update Position in Summary Frame
             -----------------------------------------------------------------------------------------------------------
-            SetPoint(item.Frame, "TOPLEFT", 10, yOffset)
-            yOffset = yOffset - 86
+            SetPoint(item.Frame, "TOPLEFT", 10, -30 - 54 * (#addonDB.Widgets.Summary.Items - 1))
         end
 
         ---------------------------------------------------------------------------------------------------------------
         -- Update Height to have Space for Close Button (We dont use Scroll view because of 6 items at most)
         ---------------------------------------------------------------------------------------------------------------
-        SetHeight(addonDB.Widgets.Summary.Frame, -yOffset + 50)
+        SetHeight(addonDB.Widgets.Summary.Frame, 30 + 54 * #addonDB.Widgets.Summary.Items + 45)
         
         ---------------------------------------------------------------------------------------------------------------
         -- If Addon Frame is shown, move Summary frame to the right of it, else in the center
@@ -900,6 +950,8 @@ local function HandleLootAssignment()
         -- Show Summary Frame
         ---------------------------------------------------------------------------------------------------------------
         ShowFrame(addonDB.Widgets.Summary.Frame)
+
+        ShareLootSummary(addonDB.Widgets.Dialogs.Roll.AssignmentList)
     end
 end
 
@@ -973,8 +1025,10 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         table.insert(addonDB.Widgets.FreePlayers, v)
         table.remove(setup.Players, k)
         -- Rearrange frames
-        local _, y = RearrangeFrames(setup.Players, "TOPLEFT", 0, -32, function(q) return q.Container end)
+        local _, y = RearrangeFrames(setup.Players, "TOPLEFT", 0, -32, function(q) return q.Container end, 10, 0)
         SetPoint(setup.TableBottomLine, "TOPLEFT", 5, y + 2)
+        -- Share update
+        ShareConfiguration(config)
     end)
 
     -------------------------------------------------------------------------------------------------------------------
@@ -993,7 +1047,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareText then
         player.RareText:SetText(rare)
     else
-        player.RareText = CreateLabel(rare, player.Container, 440, -10, color.White)
+        player.RareText = CreateLabel(rare, player.Container, nil, nil, color.White)
+        SetPoint(player.RareText, "CENTER", player.Container, "TOPLEFT", 440, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1002,7 +1057,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.RareDiffText then
         player.RareDiffText:SetText(0)
     else
-        player.RareDiffText = CreateLabel(0, player.Container, 500, -10, color.White)
+        player.RareDiffText = CreateLabel(0, player.Container, nil, nil, color.White)
+        SetPoint(player.RareDiffText, "CENTER", player.Container, "TOPLEFT", 500, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1124,7 +1180,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         -- Update Order
         ---------------------------------------------------------------------------------------------------------------
         local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
-        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
 
         if activeOrder then
             local vOffset = 0
@@ -1155,7 +1211,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierText then
         player.TierText:SetText(tier)
     else
-        player.TierText = CreateLabel(tier, player.Container, 745, -10, color.White)
+        player.TierText = CreateLabel(tier, player.Container, nil, nil, color.White)
+        SetPoint(player.TierText, "CENTER", player.Container, "TOPLEFT", 745, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1164,7 +1221,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.TierDiffText then
         player.TierDiffText:SetText(0)
     else
-        player.TierDiffText = CreateLabel(0, player.Container, 805, -10, color.White)
+        player.TierDiffText = CreateLabel(0, player.Container, nil, nil, color.White)
+        SetPoint(player.TierDiffText, "CENTER", player.Container, "TOPLEFT", 805, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1214,7 +1272,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         -- Update Order
         ---------------------------------------------------------------------------------------------------------------
         local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
-        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
 
         if activeOrder then
             local vOffset = 0
@@ -1286,7 +1344,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         -- Update Order
         ---------------------------------------------------------------------------------------------------------------
         local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
-        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
 
         if activeOrder then
             local vOffset = 0
@@ -1317,7 +1375,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalText then
         player.NormalText:SetText(normal)
     else
-        player.NormalText = CreateLabel(normal, player.Container, 1050, -10, color.White)
+        player.NormalText = CreateLabel(normal, player.Container, nil, nil, color.White)
+        SetPoint(player.NormalText, "CENTER", player.Container, "TOPLEFT", 1050, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1326,7 +1385,8 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
     if player.NormalDiffText then
         player.NormalDiffText:SetText(0)
     else
-        player.NormalDiffText = CreateLabel(0, player.Container, 1110, -10, color.White)
+        player.NormalDiffText = CreateLabel(0, player.Container, nil, nil, color.White)
+        SetPoint(player.NormalDiffText, "CENTER", player.Container, "TOPLEFT", 1110, -17)
     end
 
     -------------------------------------------------------------------------------------------------------------------
@@ -1376,7 +1436,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         -- Update Order
         ---------------------------------------------------------------------------------------------------------------
         local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
-        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
 
         if activeOrder then
             local vOffset = 0
@@ -1448,7 +1508,7 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         -- Update Order
         ---------------------------------------------------------------------------------------------------------------
         local name = GetValueByFilter(setup.Order, function(k, v) return v.Button.pushed end)
-        local activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
+        local _, activeOrder = GetValueByFilter(orderConfigs, function(k, v) return v.Name == name end)
 
         if activeOrder then
             local vOffset = 0
@@ -1929,6 +1989,7 @@ local function SetupNewEntry(cfg, show)
     -------------------------------------------------------------------------------------------------------------------
     return setup
 end
+
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Right Mouse Click Menu Frame
 -----------------------------------------------------------------------------------------------------------------------
@@ -1989,7 +2050,7 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.CreatedBy = addonDB.Widgets.Addon:CreateFontString(nil, "ARTWORK")
     SetPoint(addonDB.Widgets.CreatedBy, "BOTTOMLEFT", 10, 6)
-    addonDB.Widgets.CreatedBy:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "NONE")
+    addonDB.Widgets.CreatedBy:SetFont("Fonts\\FRIZQT__.TTF", Scaled(10), "NONE")
     addonDB.Widgets.CreatedBy:SetTextColor(1, 0.8, 0) -- set the color to golden
     addonDB.Widgets.CreatedBy:SetText("Created by " .. author)
 
@@ -2171,17 +2232,6 @@ local function SetupUserInterface()
     -- Options Dialog: Header
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.Dialogs.Options.Header = CreateHeading("OPTIONS", GetWidth(addonDB.Widgets.Dialogs.Options.Frame) - 20, addonDB.Widgets.Dialogs.Options.Frame, 10, -10, false)
-
-    -----------------------------------------------------------------------------------------------------------------------
-    -- Options Dialog: Close Button 
-    -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.Options.Close = {}
-    addonDB.Widgets.Dialogs.Options.Close.Button, addonDB.Widgets.Dialogs.Options.Close.Text = CreateButton(addonDB.Widgets.Dialogs.Options.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
-    SetPoint(addonDB.Widgets.Dialogs.Options.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Options.Frame, "BOTTOMRIGHT", -10, 10)
-    addonDB.Widgets.Dialogs.Options.Close.Button:SetScript("OnClick", function(self)
-        addonDB.Widgets.Dialogs.Options.Frame:Hide()
-    end)
-    AddHover(addonDB.Widgets.Dialogs.Options.Close.Button)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Tier Identifier Frame 
@@ -2366,6 +2416,27 @@ local function SetupUserInterface()
     addonDB.Widgets.Dialogs.Options.ScalingWarning:SetJustifyH("LEFT")
     SetPoint(addonDB.Widgets.Dialogs.Options.ScalingWarning, "TOPLEFT", addonDB.Widgets.Dialogs.Options.ScalingDescription, "BOTTOMLEFT", 0, -5)
     SetWidth(addonDB.Widgets.Dialogs.Options.ScalingWarning, GetWidth(addonDB.Widgets.Dialogs.Options.ScalingContainer) * 0.5)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Close Button 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.Close = {}
+    addonDB.Widgets.Dialogs.Options.Close.Button, addonDB.Widgets.Dialogs.Options.Close.Text = CreateButton(addonDB.Widgets.Dialogs.Options.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Dialogs.Options.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Dialogs.Options.Frame, "BOTTOMRIGHT", -10, 10)
+    addonDB.Widgets.Dialogs.Options.Close.Button:SetScript("OnClick", function(self)
+        local num = tonumber(addonDB.Widgets.Dialogs.Options.ScalingInputField:GetText())
+        if num then
+            -- Limit to 0.5 <= num <= 1.5
+            num = math.max(0.5, math.min(1.5, num))
+            addonDB.Widgets.Dialogs.Options.ScalingInputField:SetText(num)
+            addonDB.Options.Scaling = num
+            addonDB.Widgets.Dialogs.Options.Frame:Hide()
+        else
+            local c = color.Red
+            addonDB.Widgets.Dialogs.Options.ScalingInputField:SetTextColor(c.r, c.g, c.b, c.a)
+        end
+    end)
+    AddHover(addonDB.Widgets.Dialogs.Options.Close.Button)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Print Dialog
@@ -2695,6 +2766,8 @@ local function SetupUserInterface()
         table.insert(addonDB.Configs, addonDB.Widgets.Dialogs.Conflict.config)
         SetupNewEntry(addonDB.Widgets.Dialogs.Conflict.config, true)
 
+        ShareConfiguration(addonDB.Widgets.Dialogs.Conflict.config)
+
         -------------------------------------------------------------------------------------------------------------------
         -- Hide Frame
         -------------------------------------------------------------------------------------------------------------------
@@ -2781,7 +2854,7 @@ local function SetupUserInterface()
         -----------------------------------------------------------------------------------------------------------------------
         -- Deserialize String
         -----------------------------------------------------------------------------------------------------------------------
-        local success, deserialized = DeserializeConfig(self:GetText())
+        local success, deserialized = Deserialize(self:GetText())
 
         -----------------------------------------------------------------------------------------------------------------------
         -- Change to Red to signalize Deserialization error
@@ -2803,6 +2876,7 @@ local function SetupUserInterface()
         if GetValueByFilter(addonDB.Configs, function(k, v) return v.Name == deserialized.Name end) then
             addonDB.Widgets.Dialogs.Conflict.config = deserialized
             addonDB.Widgets.Dialogs.Conflict.Frame:Show()
+            return
         end
 
         -----------------------------------------------------------------------------------------------------------------------
@@ -3024,7 +3098,9 @@ local function SetupUserInterface()
         -------------------------------------------------------------------------------------------------------------------
         -- Add New Entry
         -------------------------------------------------------------------------------------------------------------------
+        local playerName, realm = UnitFullName("player")
         local entry = { 
+            ["Sharer"] = playerName.."-"..realm,
             ["Name"] = input,
             ["PlayerInfos"] = {}
         }
@@ -3314,6 +3390,8 @@ local function SetupUserInterface()
             table.insert(setup.Players, player)
             table.insert(config.PlayerInfos, playerInfo)
         end
+        -- Share Configuration Update
+        ShareConfiguration(config)
 
         -------------------------------------------------------------------------------------------------------------------
         -- Free all Frames for next usage
@@ -3741,8 +3819,8 @@ local function SetupUserInterface()
         local playerFound = false
         local orderName = nil
 
-        local v = GetValueByFilter(addonDB.Widgets.Setups, function(k, v) return v.Name == addonDB.Tracking.Name end)
-        local p = GetValueByFilter(v.Players, function(k, v) return v.PlayerName == fullName end)
+        local v = select(2, GetValueByFilter(addonDB.Widgets.Setups, function(k, v) return v.Name == addonDB.Tracking.Name end))
+        local p = select(2, GetValueByFilter(v.Players, function(k, w) return w.PlayerName == fullName end))
 
         if p then
             if max == 100 and addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed then
@@ -3807,7 +3885,7 @@ local function SetupUserInterface()
 
                 -- Sort by order
                 if orderName then
-                    local v = GetValueByFilter(orderConfigs, function(k, v) return v.Name == orderName end)
+                    local _, v = GetValueByFilter(orderConfigs, function(k, v) return v.Name == orderName end)
                     table.sort(setup.Players, v["Callback"])
                     local vOffset = 0
                     local sortedOrder = {}
@@ -3824,7 +3902,7 @@ local function SetupUserInterface()
                 end
 
                 -- Remove add button
-                local r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                local _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
                 if r then
                     r.Add.Button:Hide()
                     r.Priority = 0
@@ -3848,17 +3926,17 @@ local function SetupUserInterface()
                     RearrangeFrames(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, "TOPLEFT", 0, -32, function(f) return f.Frame end, 0, -5)
                 end
 
-                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
                 if r then
                     r.Add.Button:Hide()
                 end
 
-                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.TransmogRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.TransmogRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
                 if r then
                     r.Add.Button:Hide()
                 end
 
-                r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.InvalidRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
+                _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.InvalidRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
                 if r then
                     r.Add.Button:Hide()
                 end
@@ -3881,7 +3959,7 @@ local function SetupUserInterface()
             return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
         end)
 
-        RearrangeFrames(rolls, "TOPLEFT", 0, -32, function(v) return v.Frame end, 0, -5)
+        RearrangeFrames(rolls, "TOPLEFT", 0, -32, function(v) return v.Frame end, 10, -5)
 
         if #addonDB.Widgets.Dialogs.Roll.MainSpecRolls > 0 then
             for _, r in pairs(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls) do
@@ -4412,7 +4490,7 @@ local function SetupUserInterface()
     addonDB.Widgets.Summary.Items = {}
     addonDB.Widgets.Summary.FreeItems = {}
     addonDB.Widgets.Summary.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-    SetSize(addonDB.Widgets.Summary.Frame, 390, 450)
+    SetSize(addonDB.Widgets.Summary.Frame, 280, 430)
     SetPoint(addonDB.Widgets.Summary.Frame, "CENTER", 0, 0)
     addonDB.Widgets.Summary.Frame:SetMovable(true)
     addonDB.Widgets.Summary.Frame:EnableMouse(true)
@@ -4605,7 +4683,6 @@ addonDB.Widgets.Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
 addonDB.Widgets.Addon:RegisterEvent("BOSS_KILL")
 addonDB.Widgets.Addon:RegisterEvent("START_LOOT_ROLL")
 addonDB.Widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
-addonDB.Widgets.Addon:RegisterEvent("CHAT_MSG_ADDON")
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Callback for Event Handling
@@ -4616,8 +4693,13 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         -- Get SavedVariables
         ---------------------------------------------------------------------------------------------------------------
         local savedVariable = RaidTablesDB or {}
-        addonDB.Configs = savedVariable.Configs or addonDB.Configs
-        addonDB.Options = savedVariable.Options or addonDB.Options
+        addonDB.Options = MergeTables(addonDB.Options or {}, savedVariable.Options or {})
+        addonDB.Configs = MergeTables(addonDB.Configs or {}, savedVariable.Configs or {})
+
+        ---------------------------------------------------------------------------------------------------------------
+        -- Set Minimap Position
+        ---------------------------------------------------------------------------------------------------------------
+        addonDB.Widgets.Minimap:SetPoint("CENTER", Minimap, "BOTTOMLEFT", addonDB.Options.Minimap.X, addonDB.Options.Minimap.Y)
 
         ---------------------------------------------------------------------------------------------------------------
         -- Setup User Interface
@@ -4645,7 +4727,9 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         ---------------------------------------------------------------------------------------------------------------
         -- Registery Addon Message
         ---------------------------------------------------------------------------------------------------------------
-        addonDB.ChatMsgRegistered = C_ChatInfo.RegisterAddonMessagePrefix("RaidTablesShare") 
+        addonDB.ChatMsgRegistered = C_ChatInfo.RegisterAddonMessagePrefix("RTConfig") 
+        addonDB.ChatMsgRegistered = addonDB.ChatMsgRegistered and C_ChatInfo.RegisterAddonMessagePrefix("RTSummary") 
+
         if not addonDB.ChatMsgRegistered then
             print("[ERROR] RaidTables: Addon Chat Message Registration FAILED.")
         end
@@ -4705,78 +4789,13 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
 
             HandleLootAssignment()
         end
-
-    elseif event == "CHAT_MSG_ADDON" and arg1 == "RaidTablesShare" then
-        local msg, msgType, sender = ...
-        local playerName, realm = UnitFullName("player")
-        local fullPlayerName = playerName.."-"..realm
-
-        -- Skip message from self
-        if sender == fullPlayerName then
-            return
-        end
-
-        addonDB.MsgBuffer = addonDB.MsgBuffer or {}
-        addonDB.MsgBuffer[sender] = addonDB.MsgBuffer[sender] or {}
-        
-        local parts = SplitString(msg, "$|$")
-        local id, startIndex, endIndex, totalLength, msgPart = parts[1], parts[2], parts[3], parts[4], parts[5]
-        if not startIndex or not endIndex or not msgPart or not totalLength or not id then
-            print("[ERROR] RaidTables: Received corrupted message.")
-            return
-        end
-
-        local now = GetTime()
-        addonDB.MsgBuffer[sender][id] = addonDB.MsgBuffer[sender][id] or {}
-        addonDB.MsgBuffer[sender][id].totalLength = tonumber(totalLength)
-        addonDB.MsgBuffer[sender][id].LastUpdate = now
-        addonDB.MsgBuffer[sender][id][tonumber(startIndex)] = {
-            endIndex = tonumber(endIndex),
-            msgPart = msgPart,
-        }
-
-        for senderName, buffer in pairs(addonDB.MsgBuffer) do
-            for i, data in pairs(buffer) do
-                -- Create full payload from parts
-                local payload, idx = "", 0
-                while idx < data.totalLength do
-                    if data[idx + 1] then
-                        idx = data[idx + 1].endIndex
-                    else
-                        break
-                    end
-                end
-                -- Skip if parts are missing
-                if idx ~= data.totalLength then
-                    -- Drop if too old
-                    if (data.LastUpdate + 10) < now then
-                        -- Clear buffer
-                        table.remove(buffer, i)
-                    end
-                    break
-                end
-                -- Concatenate payload
-                idx = 1
-                while idx < data.totalLength do
-                    if data[idx] then
-                        payload = payload .. data[idx].msgPart
-                        idx = data[idx].endIndex + 1
-                    else
-                        break
-                    end
-                end
-                -- TODO do something with payload
-                -- Clear buffer
-                addonDB.MsgBuffer[senderName][i] = nil
-            end
-        end
     end
 end)
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Slash Command
 -----------------------------------------------------------------------------------------------------------------------
-SLASH_RAID_TABLES_COMMAND1 = "/gpt"
+SLASH_RAID_TABLES_COMMAND1 = "/rtables"
 local function SlashCommandHandler(msg)
     if msg == "help" then
         print("LootTables - Help Menu")
@@ -4794,7 +4813,7 @@ local function SlashCommandHandler(msg)
         if addonDB.ChatMsgRegistered then
             for _, v in pairs(addonDB.Configs) do
                 for _, p in pairs(v.PlayerInfos) do
-                    local success = C_ChatInfo.SendAddonMessage("RaidTablesShare", p.Name .. ":" .. p.Class .. ":"..p.Rare..":"..p.Tier..":"..p.Normal, "PARTY", UnitName("player"))
+                    local success = C_ChatInfo.SendAddonMessage("RTConfig", p.Name .. ":" .. p.Class .. ":"..p.Rare..":"..p.Tier..":"..p.Normal, "PARTY", UnitName("player"))
                     if success then
                         print("[SUCCESS] RaidTables: Message transmitted!")
                     else
@@ -4822,7 +4841,7 @@ local function SlashCommandHandler(msg)
 
         for _, s in pairs(addonDB.Widgets.Setups) do
             if addonDB.Tracking.Name == nil and s.Tab.Button.pushed then
-                EnableTracking(s.name, false)
+                EnableTracking(s.Name, false)
                 local c = color.Highlight
                 s.Tab.Button:SetBackdropColor(c.r, c.g, c.b)
             elseif s.Name == addonDB.Tracking.Name then
@@ -4856,16 +4875,19 @@ SlashCmdList.RAID_TABLES_COMMAND = SlashCommandHandler
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Minimap Button
 -----------------------------------------------------------------------------------------------------------------------
-addonDB.Widgets.Minimap = CreateFrame("Button", nil, Minimap)
+addonDB.Widgets.Minimap = CreateFrame("Button", addonName, Minimap)
 SetSize(addonDB.Widgets.Minimap, 32, 32)
-SetPoint(addonDB.Widgets.Minimap, "TOPLEFT", Minimap, "TOPLEFT", 10, -50)
+SetPoint(addonDB.Widgets.Minimap, "CENTER", Minimap, "BOTTOMLEFT", 10, -10)
 addonDB.Widgets.Minimap:SetNormalTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
 addonDB.Widgets.Minimap:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 addonDB.Widgets.Minimap:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+addonDB.Widgets.Minimap:SetMovable(true)
+addonDB.Widgets.Minimap:EnableMouse(true)
+addonDB.Widgets.Minimap:RegisterForDrag("LeftButton")
 addonDB.Widgets.Minimap:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:SetText("MyAddon")
-    GameTooltip:AddLine("Click to show MyAddon frame", 1, 1, 1)
+    GameTooltip:SetText(addonName)
+    GameTooltip:AddLine("Click to show ".. addonName .. " frame", 1, 1, 1)
     GameTooltip:Show()
 end)
 addonDB.Widgets.Minimap:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -4877,6 +4899,42 @@ addonDB.Widgets.Minimap:SetScript("OnClick", function(self)
         addonDB.Widgets.Addon:Hide()
     else
         addonDB.Widgets.Addon:Show()
+    end
+end)
+addonDB.Widgets.Minimap:SetScript("OnDragStart", function(self)
+    self.moving = true
+    self:StartMoving()
+end)
+addonDB.Widgets.Minimap:SetScript("OnDragStop", function(self)
+    self.moving = false
+    self:StopMovingOrSizing()
+    local x, y = GetCursorPosition()
+    local scale = Minimap:GetEffectiveScale()
+    local left = Minimap:GetLeft()
+    local bottom = Minimap:GetBottom()
+
+    x = x / scale
+    y = y / scale
+
+    addonDB.Options.Minimap.X = x - left
+    addonDB.Options.Minimap.Y = y - bottom
+end)
+addonDB.Widgets.Minimap:SetScript("OnUpdate", function(self)
+    if self.moving then
+        local x, y = GetCursorPosition()
+        local scale = Minimap:GetEffectiveScale()
+        local left = Minimap:GetLeft()
+        local right = Minimap:GetRight()
+        local top = Minimap:GetTop()
+        local bottom = Minimap:GetBottom()
+
+        x = x / scale
+        y = y / scale
+
+        if x > left and x < right and y > bottom and y < top then
+            self:ClearAllPoints()
+            self:SetPoint("CENTER", Minimap, "BOTTOMLEFT", x - left, y - bottom)
+        end
     end
 end)
 
