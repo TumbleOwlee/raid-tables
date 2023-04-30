@@ -45,7 +45,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          prerelease: true
+          prerelease: false
           name: ${{ env.VERSION }}
           tag_name: release-${{ env.VERSION }}
           files: RaidTables-${{ env.VERSION }}.zip
