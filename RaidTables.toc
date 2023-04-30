@@ -6,4 +6,4 @@
 ## SavedVariables: RaidTablesDB
 
 embeds.xml 
-Core.lua
+RaidTables.lua
