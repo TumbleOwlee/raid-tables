@@ -38,6 +38,7 @@ local addonDB = {
     },
     Testing = true,
     Sharing = false,
+    LastEncodedConfig = nil,
 }
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -518,7 +519,27 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 local function GetIdFromLink(itemLink)
     local match = SplitString(itemLink, ":")
-    return match[2]
+    return tonumber(match[2])
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Set Icon Texture
+-----------------------------------------------------------------------------------------------------------------------
+local function SetItemTexture(icon, texture, itemLink)
+    local itemTexture = select(10, GetItemInfo(itemLink))
+    if itemTexture then
+        texture:SetTexture(itemTexture)
+    else
+        local itemId = GetIdFromLink(itemLink)
+        icon:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+        icon:SetScript("OnEvent", function(self, event, arg)
+            if arg == itemId or arg == tonumber(itemId) then
+                local it = select(10, GetItemInfo(itemLink))
+                texture:SetTexture(it)
+                self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
+            end
+        end)
+    end
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -584,7 +605,12 @@ end
 local function ShareConfiguration(config) 
     if addonDB.Sharing and addonDB.Tracking.Active and config.Name == addonDB.Tracking.Name then
         local written = 1
+        table.sort(config.PlayerInfos, function(a, b) return a.Name < b.Name end)
         local encoded = SerializeConfig(config)
+        if encoded == addonDB.LastEncodedConfig then
+            return
+        end
+        addonDB.LastEncodedConfig = encoded
         addonDB.Identifier = addonDB.Identifier or 0
         local id = addonDB.Identifier
         addonDB.Identifier = addonDB.Identifier + 1
@@ -797,7 +823,6 @@ local function HandleLootAssignment()
         -- Update the Item Icon
         ---------------------------------------------------------------------------------------------------------------
         addonDB.Widgets.Dialogs.Roll.ActiveItemLink = RemoveFirstElement(addonDB.Widgets.Dialogs.Roll.Items)
-        local itemTexture = select(10, GetItemInfo(addonDB.Widgets.Dialogs.Roll.ActiveItemLink))
         local itemId = GetIdFromLink(addonDB.Widgets.Dialogs.Roll.ActiveItemLink)
 
         ---------------------------------------------------------------------------------------------------------------
@@ -823,7 +848,7 @@ local function HandleLootAssignment()
         ---------------------------------------------------------------------------------------------------------------
         -- Update GameTooltip for Item
         ---------------------------------------------------------------------------------------------------------------
-        addonDB.Widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
+        SetItemTexture(addonDB.Widgets.Dialogs.Roll.ItemIcon, addonDB.Widgets.Dialogs.Roll.ItemTexture, addonDB.Widgets.Dialogs.Roll.ActiveItemLink)
         addonDB.Widgets.Dialogs.Roll.ItemIcon:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetHyperlink(addonDB.Widgets.Dialogs.Roll.ActiveItemLink)
@@ -906,8 +931,7 @@ local function HandleLootAssignment()
             -----------------------------------------------------------------------------------------------------------
             -- Update GameTooltip for Item Icon
             -----------------------------------------------------------------------------------------------------------
-            local itemTexture = select(10, GetItemInfo(assignment.ItemLink))
-            item.ItemTexture:SetTexture(itemTexture)
+            SetItemTexture(item.ItemIcon, item.ItemTexture, assignment.ItemLink)
             item.ItemIcon:SetScript("OnEnter", function(self)
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink(assignment.ItemLink)
@@ -3657,8 +3681,7 @@ local function SetupUserInterface()
     addonDB.Widgets.Dialogs.Roll.ItemTexture = addonDB.Widgets.Dialogs.Roll.ItemIcon:CreateTexture(nil, "ARTWORK")
     addonDB.Widgets.Dialogs.Roll.ItemTexture:SetAllPoints()
     addonDB.Widgets.Dialogs.Roll.ActiveItemLink = nil
-    local itemTexture = select(10, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
-    addonDB.Widgets.Dialogs.Roll.ItemTexture:SetTexture(itemTexture)
+    SetItemTexture(addonDB.Widgets.Dialogs.Roll.ItemIcon, addonDB.Widgets.Dialogs.Roll.ItemTexture, "|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r")
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Roll Dialog: Roll Button
@@ -3923,7 +3946,7 @@ local function SetupUserInterface()
                         end
                         return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
                     end)
-                    RearrangeFrames(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, "TOPLEFT", 0, -32, function(f) return f.Frame end, 0, -5)
+                    RearrangeFrames(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, "TOPLEFT", 0, -32, function(f) return f.Frame end, 10, -5)
                 end
 
                 _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.SecondSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
@@ -4680,9 +4703,9 @@ end
 addonDB.Widgets.Addon:RegisterEvent("ADDON_LOADED")
 addonDB.Widgets.Addon:RegisterEvent("PLAYER_LOGOUT")
 addonDB.Widgets.Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
-addonDB.Widgets.Addon:RegisterEvent("BOSS_KILL")
 addonDB.Widgets.Addon:RegisterEvent("START_LOOT_ROLL")
 addonDB.Widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
+addonDB.Widgets.Addon:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Callback for Event Handling
@@ -4734,6 +4757,9 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
             print("[ERROR] RaidTables: Addon Chat Message Registration FAILED.")
         end
 
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        addonDB.LastEncodedConfig = nil
+
     elseif event == "PLAYER_ENTERING_WORLD" then
         if IsInRaid() and not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
             addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
@@ -4752,9 +4778,6 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         elseif addonDB.Tracking.Active then
             ShareConfiguration(select(2, GetConfigByName(addonDB.Tracking.Name)))
         end
-
-    elseif event == "BOSS_KILL" then
-        -- pass
 
     elseif event == "START_LOOT_ROLL" and arg1 then
         if addonDB.Tracking.Active and IsInRaid() then
@@ -4832,11 +4855,12 @@ local function SlashCommandHandler(msg)
         print("Free Player List Items = "..#addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames)
     elseif msg == "roll test" then
         addonDB.Testing = true
-        local item = select(2, GetItemInfo("|cffa335ee|Hitem:196590::::::::60:577::6:4:7188:6652:1485:6646:1:28:752:::|h[Dreadful Topaz Forgestone]|h|r"))
+
+        local item = "|cffa335ee|Hitem:196590::::::::60:577::6:4:7188:6652:1485:6646:1:28:752:::|h[Dreadful Topaz Forgestone]|h|r"
         table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
-        item = select(2, GetItemInfo("|cffa335ee|Hitem:19019::::::::120:265::5::::|h[Thunderfury, Blessed Blade of the Windseeker]|h|r"))
+        item = "|cffa335ee|Hitem:19019::::::::120:265::5::::|h[Thunderfury, Blessed Blade of the Windseeker]|h|r"
         table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
-        item = select(2, GetItemInfo("|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"))
+        item = "|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"
         table.insert(addonDB.Widgets.Dialogs.Roll.Items, item)
 
         for _, s in pairs(addonDB.Widgets.Setups) do
