@@ -3797,7 +3797,7 @@ local function SetupUserInterface()
 
             roll.PlayerLabel = CreateLabel(name .. "-" .. realm, roll.Frame, 10, -10, colour)
             roll.RollLabel = CreateLabel("Roll:", roll.Frame, 200, -10, color.White)
-            roll.PriorityLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
+            roll.ItemCountLabel = CreateLabel("", roll.Frame, -10, -10, color.Gold, "TOPRIGHT")
             roll.Add = {}
             roll.Add.Button, roll.Add.Text = CreateButton(roll.Frame, "ADD", 70, 25, color.DarkGray, color.LightGray, color.Gold)
             SetPoint(roll.Add.Button, "RIGHT", -10, 0)
@@ -3834,7 +3834,7 @@ local function SetupUserInterface()
             roll.Frame:SetScript("OnClick", function(self) end)
         end
 
-        roll.Priority = 0
+        roll.ItemCount = 0
         roll.PlayerLabel:SetText(name .. "-" .. realm)
         roll.PlayerLabel:SetTextColor(colour.r, colour.g, colour.b, colour.a)
         roll.RollLabel:SetText("Roll: " .. rollValue)
@@ -3848,25 +3848,25 @@ local function SetupUserInterface()
         if p then
             if max == 100 and addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed then
                 local num = tonumber(p.TierText:GetText()) + tonumber(p.TierDiffText:GetText())
-                roll.Priority = num
-                roll.PriorityLabel:SetText("Prio: "..num)
-                roll.PriorityLabel:Show()
+                roll.ItemCount = num
+                roll.ItemCountLabel:SetText("Items: "..num)
+                roll.ItemCountLabel:Show()
                 orderName = "Tier Low"
             elseif max == 100 and addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed then
                 local num = tonumber(p.RareText:GetText()) + tonumber(p.RareDiffText:GetText())
-                roll.Priority = num
-                roll.PriorityLabel:SetText("Prio: "..num)
-                roll.PriorityLabel:Show()
+                roll.ItemCount = num
+                roll.ItemCountLabel:SetText("Items: "..num)
+                roll.ItemCountLabel:Show()
                 orderName = "Rare Low"
             elseif max == 100 and addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed then
                 local num = tonumber(p.NormalText:GetText()) + tonumber(p.NormalDiffText:GetText())
-                roll.Priority = num
-                roll.PriorityLabel:SetText("Prio: "..num)
-                roll.PriorityLabel:Show()
+                roll.ItemCount = num
+                roll.ItemCountLabel:SetText("Items: "..num)
+                roll.ItemCountLabel:Show()
                 orderName = "Normal Low"
             else
-                roll.PriorityLabel:SetText("")
-                roll.PriorityLabel:Hide()
+                roll.ItemCountLabel:SetText("")
+                roll.ItemCountLabel:Hide()
             end
             roll.Add.Button:Hide()
             playerFound = true
@@ -3874,10 +3874,10 @@ local function SetupUserInterface()
 
         -- Player missing in setup
         if not playerFound then
-            roll.Priority = -1
+            roll.ItemCount = -1
             -- Hide label
-            roll.PriorityLabel:SetText("")
-            roll.PriorityLabel:Hide()
+            roll.ItemCountLabel:SetText("")
+            roll.ItemCountLabel:Hide()
             -- Show button
             roll.Add.Button:Show()
             roll.Add.Button:SetScript("OnClick", function(self)
@@ -3928,23 +3928,23 @@ local function SetupUserInterface()
                 local _, r = GetValueByFilter(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(k, v) return v.PlayerLabel:GetText() == fullName end)
                 if r then
                     r.Add.Button:Hide()
-                    r.Priority = 0
+                    r.ItemCount = 0
                     if addonDB.Widgets.Dialogs.Roll.Tier.Button.pushed or addonDB.Widgets.Dialogs.Roll.Rare.Button.pushed or addonDB.Widgets.Dialogs.Roll.Normal.Button.pushed then
-                        r.PriorityLabel:SetText("Prio: 0")
-                        r.PriorityLabel:Show()
+                        r.ItemCountLabel:SetText("Items: 0")
+                        r.ItemCountLabel:Show()
                     end
 
                     table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                        if a.Priority == nil and b.Priority == nil then
+                        if a.ItemCount == nil and b.ItemCount == nil then
                             return a.Value > b.Value
                         end
-                        if a.Priority == nil then
+                        if a.ItemCount == nil then
                             return false 
                         end
-                        if b.Priority == nil then
+                        if b.ItemCount == nil then
                             return true 
                         end
-                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                        return a.ItemCount < b.ItemCount or (a.ItemCount == b.ItemCount and a.Value > b.Value)
                     end)
                     RearrangeFrames(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, "TOPLEFT", 0, -32, function(f) return f.Frame end, 10, -5)
                 end
@@ -3970,16 +3970,16 @@ local function SetupUserInterface()
 
         table.insert(rolls, roll)
         table.sort(rolls, function(a, b) 
-            if a.Priority == nil and b.Priority == nil then
+            if a.ItemCount == nil and b.ItemCount == nil then
                 return a.Value > b.Value
             end
-            if a.Priority == nil then
+            if a.ItemCount == nil then
                 return false 
             end
-            if b.Priority == nil then
+            if b.ItemCount == nil then
                 return true 
             end
-            return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+            return a.ItemCount < b.ItemCount or (a.ItemCount == b.ItemCount and a.Value > b.Value)
         end)
 
         RearrangeFrames(rolls, "TOPLEFT", 0, -32, function(v) return v.Frame end, 10, -5)
@@ -4044,25 +4044,25 @@ local function SetupUserInterface()
                 for _, player in pairs(setup.Players) do
                     if player.PlayerName == roll.PlayerLabel:GetText() then
                         local num = tonumber(player.TierText:GetText()) + tonumber(player.TierDiffText:GetText())
-                        roll.Priority = num
-                        roll.PriorityLabel:SetText("Prio: ".. num)
-                        roll.PriorityLabel:Show()
+                        roll.ItemCount = num
+                        roll.ItemCountLabel:SetText("Items: ".. num)
+                        roll.ItemCountLabel:Show()
                         break
                     end
                 end
             end
 
             table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                if a.Priority == nil and b.Priority == nil then
+                if a.ItemCount == nil and b.ItemCount == nil then
                     return a.Value > b.Value
                 end
-                if a.Priority == nil then
+                if a.ItemCount == nil then
                     return false 
                 end
-                if b.Priority == nil then
+                if b.ItemCount == nil then
                     return true 
                 end
-                return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                return a.ItemCount < b.ItemCount or (a.ItemCount == b.ItemCount and a.Value > b.Value)
             end)
 
             local vOffset = -5
@@ -4156,25 +4156,25 @@ local function SetupUserInterface()
                         for _, player in pairs(setup.Players) do
                             if player.PlayerName == roll.PlayerLabel:GetText() then
                                 local num = tonumber(player.RareText:GetText()) + tonumber(player.RareDiffText:GetText())
-                                roll.Priority = num
-                                roll.PriorityLabel:SetText("Prio: ".. num)
-                                roll.PriorityLabel:Show()
+                                roll.ItemCount = num
+                                roll.ItemCountLabel:SetText("Items: ".. num)
+                                roll.ItemCountLabel:Show()
                                 break
                             end
                         end
                     end
 
                     table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                        if a.Priority == nil and b.Priority == nil then
+                        if a.ItemCount == nil and b.ItemCount == nil then
                             return a.Value > b.Value
                         end
-                        if a.Priority == nil then
+                        if a.ItemCount == nil then
                             return false 
                         end
-                        if b.Priority == nil then
+                        if b.ItemCount == nil then
                             return true 
                         end
-                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                        return a.ItemCount < b.ItemCount or (a.ItemCount == b.ItemCount and a.Value > b.Value)
                     end)
 
                     local vOffset = -5
@@ -4271,25 +4271,25 @@ local function SetupUserInterface()
                         for _, player in pairs(setup.Players) do
                             if player.PlayerName == roll.PlayerLabel:GetText() then
                                 local num = tonumber(player.NormalText:GetText()) + tonumber(player.NormalDiffText:GetText())
-                                roll.Priority = num
-                                roll.PriorityLabel:SetText("Prio: ".. num)
-                                roll.PriorityLabel:Show()
+                                roll.ItemCount = num
+                                roll.ItemCountLabel:SetText("Items: ".. num)
+                                roll.ItemCountLabel:Show()
                                 break
                             end
                         end
                     end
 
                     table.sort(addonDB.Widgets.Dialogs.Roll.MainSpecRolls, function(a, b) 
-                        if a.Priority == nil and b.Priority == nil then
+                        if a.ItemCount == nil and b.ItemCount == nil then
                             return a.Value > b.Value
                         end
-                        if a.Priority == nil then
+                        if a.ItemCount == nil then
                             return false 
                         end
-                        if b.Priority == nil then
+                        if b.ItemCount == nil then
                             return true 
                         end
-                        return a.Priority < b.Priority or (a.Priority == b.Priority and a.Value > b.Value)
+                        return a.ItemCount < b.ItemCount or (a.ItemCount == b.ItemCount and a.Value > b.Value)
                     end)
 
                     local vOffset = -5
