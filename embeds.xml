@@ -2,5 +2,5 @@
 ..\FrameXML\UI.xsd">
     <Script file="Libs\LibStub\LibStub.lua"/>
     <Script file="Libs\LibDeflate\LibDeflate.lua"/>
-    <Include file="Libs\LibSerialize\LibSerialize.xml"/>
+    <Include file="Libs\LibSerialize\LibSerialize.lua"/>
 </Ui>

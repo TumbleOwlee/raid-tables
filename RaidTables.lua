@@ -13,6 +13,7 @@ local addonDB = {
         FreeSetups = {},
         FreePlayers = {},
         Dialogs = {},
+        Minimap = {},
     },
     Configs = {},
     Options = {
@@ -4722,7 +4723,7 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         ---------------------------------------------------------------------------------------------------------------
         -- Set Minimap Position
         ---------------------------------------------------------------------------------------------------------------
-        addonDB.Widgets.Minimap:SetPoint("CENTER", Minimap, "BOTTOMLEFT", addonDB.Options.Minimap.X, addonDB.Options.Minimap.Y)
+        addonDB.Widgets.Minimap.Button:SetPoint("CENTER", Minimap, "BOTTOMLEFT", addonDB.Options.Minimap.X, addonDB.Options.Minimap.Y)
 
         ---------------------------------------------------------------------------------------------------------------
         -- Setup User Interface
@@ -4899,23 +4900,31 @@ SlashCmdList.RAID_TABLES_COMMAND = SlashCommandHandler
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Minimap Button
 -----------------------------------------------------------------------------------------------------------------------
-addonDB.Widgets.Minimap = CreateFrame("Button", addonName, Minimap)
-SetSize(addonDB.Widgets.Minimap, 32, 32)
-SetPoint(addonDB.Widgets.Minimap, "CENTER", Minimap, "BOTTOMLEFT", 10, -10)
-addonDB.Widgets.Minimap:SetNormalTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
-addonDB.Widgets.Minimap:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-addonDB.Widgets.Minimap:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-addonDB.Widgets.Minimap:SetMovable(true)
-addonDB.Widgets.Minimap:EnableMouse(true)
-addonDB.Widgets.Minimap:RegisterForDrag("LeftButton")
-addonDB.Widgets.Minimap:SetScript("OnEnter", function(self)
+addonDB.Widgets.Minimap.Button = CreateFrame("Button", addonName, Minimap)
+SetPoint(addonDB.Widgets.Minimap.Button, "CENTER", Minimap, "BOTTOMLEFT", 10, -10)
+addonDB.Widgets.Minimap.Overlay = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "OVERLAY")
+addonDB.Widgets.Minimap.Overlay:SetSize(50, 50)
+addonDB.Widgets.Minimap.Overlay:SetTexture(136430) --"Interface\\Minimap\\MiniMap-TrackingBorder"
+addonDB.Widgets.Minimap.Overlay:SetPoint("TOPLEFT", addonDB.Widgets.Minimap.Button, "TOPLEFT", 0, 0)
+addonDB.Widgets.Minimap.Background = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "BACKGROUND")
+addonDB.Widgets.Minimap.Background:SetSize(24, 24)
+addonDB.Widgets.Minimap.Background:SetTexture(136467) --"Interface\\Minimap\\UI-Minimap-Background"
+addonDB.Widgets.Minimap.Background:SetPoint("CENTER", addonDB.Widgets.Minimap.Button, "CENTER", 0, 1)
+addonDB.Widgets.Minimap.Icon = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "ARTWORK")
+addonDB.Widgets.Minimap.Icon:SetSize(18, 18)
+addonDB.Widgets.Minimap.Icon:SetTexture("Interface\\AddOns\\RaidTables\\img\\RaidTables.png")
+addonDB.Widgets.Minimap.Icon:SetPoint("CENTER", addonDB.Widgets.Minimap.Button, "CENTER", 0, 1)
+addonDB.Widgets.Minimap.Button:SetMovable(true)
+addonDB.Widgets.Minimap.Button:EnableMouse(true)
+addonDB.Widgets.Minimap.Button:RegisterForDrag("LeftButton")
+addonDB.Widgets.Minimap.Button:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:SetText(addonName)
     GameTooltip:AddLine("Click to show ".. addonName .. " frame", 1, 1, 1)
     GameTooltip:Show()
 end)
-addonDB.Widgets.Minimap:SetScript("OnLeave", function() GameTooltip:Hide() end)
-addonDB.Widgets.Minimap:SetScript("OnClick", function(self)
+addonDB.Widgets.Minimap.Button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+addonDB.Widgets.Minimap.Button:SetScript("OnClick", function(self)
     if addonDB.Widgets.Addon:IsShown() then
         if IsDialogShown() then
             return
@@ -4925,11 +4934,11 @@ addonDB.Widgets.Minimap:SetScript("OnClick", function(self)
         addonDB.Widgets.Addon:Show()
     end
 end)
-addonDB.Widgets.Minimap:SetScript("OnDragStart", function(self)
+addonDB.Widgets.Minimap.Button:SetScript("OnDragStart", function(self)
     self.moving = true
     self:StartMoving()
 end)
-addonDB.Widgets.Minimap:SetScript("OnDragStop", function(self)
+addonDB.Widgets.Minimap.Button:SetScript("OnDragStop", function(self)
     self.moving = false
     self:StopMovingOrSizing()
     local x, y = GetCursorPosition()
@@ -4943,7 +4952,7 @@ addonDB.Widgets.Minimap:SetScript("OnDragStop", function(self)
     addonDB.Options.Minimap.X = x - left
     addonDB.Options.Minimap.Y = y - bottom
 end)
-addonDB.Widgets.Minimap:SetScript("OnUpdate", function(self)
+addonDB.Widgets.Minimap.Button:SetScript("OnUpdate", function(self)
     if self.moving then
         local x, y = GetCursorPosition()
         local scale = Minimap:GetEffectiveScale()
