@@ -32,7 +32,9 @@ jobs:
           mkdir -p ./RaidTables/libs/LibDeflate
           mkdir -p ./RaidTables/libs/LibSerialize
           mkdir -p ./RaidTables/libs/LibStub
+          mkdir -p ./RaidTables/img
           cp -r ./RaidTables.lua ./RaidTables.toc ./embeds.xml ./LICENSE ./README.md ./RaidTables
+          cp -r ./img/RaidTables.png ./RaidTables/img/
           cp -r ./libs/LibDeflate/LibDeflate.lua ./libs/LibDeflate/LICENSE.txt ./RaidTables/libs/LibDeflate/
           cp -r ./libs/LibSerialize/LibSerialize.lua ./libs/LibSerialize/LICENSE ./RaidTables/libs/LibSerialize/
           cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
