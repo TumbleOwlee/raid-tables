@@ -3044,6 +3044,7 @@ local function SetupUserInterface()
     SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.No.Button, "BOTTOMLEFT", addonDB.Widgets.Dialogs.ActivateRaid.Frame, "BOTTOMLEFT", 45, 10)
     addonDB.Widgets.Dialogs.ActivateRaid.No.Button:SetScript("OnClick", function(self)
         DisableTracking()
+        addonDB.Widgets.Dialogs.ActivateRaid.Frame:Hide()
     end)
     AddHover(addonDB.Widgets.Dialogs.ActivateRaid.No.Button)
 
@@ -4703,6 +4704,7 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 addonDB.Widgets.Addon:RegisterEvent("ADDON_LOADED")
 addonDB.Widgets.Addon:RegisterEvent("PLAYER_LOGOUT")
+addonDB.Widgets.Addon:RegisterEvent("PLAYER_LOGIN")
 addonDB.Widgets.Addon:RegisterEvent("PLAYER_ENTERING_WORLD")
 addonDB.Widgets.Addon:RegisterEvent("START_LOOT_ROLL")
 addonDB.Widgets.Addon:RegisterEvent("RAID_INSTANCE_WELCOME")
@@ -4761,7 +4763,7 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
     elseif event == "GROUP_ROSTER_UPDATE" then
         addonDB.LastEncodedConfig = nil
 
-    elseif event == "PLAYER_ENTERING_WORLD" then
+    elseif event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGIN" then
         if IsInRaid() and not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
             addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
             addonDB.Widgets.Dialogs.ActivateRaid.Frame:Show()
