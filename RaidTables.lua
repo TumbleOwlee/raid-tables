@@ -4631,20 +4631,17 @@ local function SetupUserInterface()
                 for _, unit in pairs(units) do
                     -- Create frame
                     local player = {}
-                    player.Class = unit.Class
                     local c = classColor[unit.Class]
                     if #addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames > 0 then
-                        for k, v in pairs(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames) do
-                            player = v
-                            player.Container:Show()
-                            player.Checkbox:SetChecked(false)
-                            player.Name:SetText(unit.Name)
-                            player.Name:SetTextColor(c.r, c.g, c.b)
-                            SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
-                            table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
-                            table.remove(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames, k)
-                            break 
-                        end
+                        local k, v = GetFirstValue(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames)
+                        player = v
+                        player.Container:Show()
+                        player.Checkbox:SetChecked(false)
+                        player.Name:SetText(unit.Name)
+                        player.Name:SetTextColor(c.r, c.g, c.b)
+                        SetPoint(player.Container, "TOPLEFT", 10, -10 + -33 * #addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames)
+                        table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
+                        table.remove(addonDB.Widgets.Dialogs.AddPlayers.FreePlayerFrames, k)
                     else
                         player.Container = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.ScrollView, "BackdropTemplate")
                         SetWidth(player.Container, GetWidth(addonDB.Widgets.Dialogs.AddPlayers.ScrollView) - 20)
@@ -4664,6 +4661,7 @@ local function SetupUserInterface()
                         SetPoint(player.Checkbox, "TOPLEFT", 30, -3)
                         table.insert(addonDB.Widgets.Dialogs.AddPlayers.PlayerFrames, player)
                     end
+                    player.Class = unit.Class
                 end
                 break;
             end
