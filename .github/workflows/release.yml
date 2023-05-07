@@ -25,18 +25,20 @@ jobs:
       
       - name: Collect all files
         run: |
-          mkdir ./RaidTablesViewer
-          mkdir -p ./RaidTablesViewer/libs/LibDeflate
-          mkdir -p ./RaidTablesViewer/libs/LibSerialize
-          mkdir -p ./RaidTablesViewer/libs/LibStub
-          mkdir -p ./RaidTablesViewer/img
-          cp -r ./RaidTablesViewer.lua ./RaidTablesViewer.toc ./embeds.xml ./LICENSE ./README.md ./RaidTablesViewer
-          cp -r ./img/RaidTablesViewer.png ./RaidTablesViewer/img/
-          cp -r ./libs/LibDeflate/LibDeflate.lua ./libs/LibDeflate/LICENSE.txt ./RaidTablesViewer/libs/LibDeflate/
-          cp -r ./libs/LibSerialize/LibSerialize.lua ./libs/LibSerialize/LICENSE ./RaidTablesViewer/libs/LibSerialize/
-          cp -r ./libs/LibStub/LibStub.lua ./RaidTablesViewer/libs/LibStub/
-          zip -r RaidTablesViewer-${{ github.ref_name }}.zip ./RaidTablesViewer
-          tar -czvf RaidTablesViewer-${{ github.ref_name }}.tar.gz ./RaidTablesViewer
+          mkdir ./RaidTables
+          mkdir -p ./RaidTables/libs/LibDeflate
+          mkdir -p ./RaidTables/libs/LibSerialize
+          mkdir -p ./RaidTables/libs/LibStub
+          mkdir -p ./RaidTables/libs/LibUIDropDownMenu
+          mkdir -p ./RaidTables/img
+          cp -r ./RaidTables.lua ./RaidTables.toc ./embeds.xml ./LICENSE ./README.md ./RaidTables
+          cp -r ./img/RaidTables.png ./RaidTables/img/
+          cp -r ./libs/LibDeflate/LibDeflate.lua ./libs/LibDeflate/LICENSE.txt ./RaidTables/libs/LibDeflate/
+          cp -r ./libs/LibSerialize/LibSerialize.lua ./libs/LibSerialize/LICENSE ./RaidTables/libs/LibSerialize/
+          cp -r ./libs/LibStub/LibStub.lua ./RaidTables/libs/LibStub/
+          cp -r ./libs/LibUIDropDownMenu/LibUIDropDownMenu.lua ./RaidTables/libs/LibUIDropDownMenu/
+          zip -r RaidTables-${{ github.ref_name }}.zip ./RaidTables
+          tar -czvf RaidTables-${{ github.ref_name }}.tar.gz ./RaidTables
           
       - name: Release
         uses: softprops/action-gh-release@v1
