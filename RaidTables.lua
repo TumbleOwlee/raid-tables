@@ -1902,6 +1902,7 @@ local function SetupNewEntry(cfg, show)
                         local c = color.LightGray
                         addonDB.Widgets.Export.Button:Hide()
                         addonDB.Widgets.Save.Button:Hide()
+                        addonDB.Widgets.Share.Button:Hide()
                         addonDB.Widgets.Print.Button:Hide()
                         addonDB.Widgets.AddPlayers.Button:Disable()
                         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -1994,6 +1995,7 @@ local function SetupNewEntry(cfg, show)
         setup.Tab.Button.pushed = true
         addonDB.Widgets.Export.Button:Show()
         addonDB.Widgets.Save.Button:Show()
+        addonDB.Widgets.Share.Button:Show()
         addonDB.Widgets.Print.Button:Show()
         addonDB.Widgets.AddPlayers.Button:Enable()
         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -2106,6 +2108,21 @@ local function SetupUserInterface()
         ToggleFrame(addonDB.Widgets.Addon)
     end)
     AddHover(addonDB.Widgets.Close.Button)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Create Share Button
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Share = {}
+    addonDB.Widgets.Share.Button, addonDB.Widgets.Share.Text = CreateButton(addonDB.Widgets.Content, "Share", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.Share.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -234, 10)
+    addonDB.Widgets.Share.Button:SetScript("OnClick", function(self)
+        local config = GetActiveConfig()
+        if config then
+            addonDB.LastEncodedConfig = nil
+            ShareConfiguration(config)
+        end
+    end)
+    AddHover(addonDB.Widgets.Share.Button)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Create Save Button
@@ -3153,6 +3170,7 @@ local function SetupUserInterface()
         -------------------------------------------------------------------------------------------------------------------
         addonDB.Widgets.Export.Button:Show()
         addonDB.Widgets.Save.Button:Show()
+        addonDB.Widgets.Share.Button:Show()
         addonDB.Widgets.Print.Button:Show()
         addonDB.Widgets.AddPlayers.Button:Enable()
         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -4737,6 +4755,7 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
             local c = color.LightGray
             addonDB.Widgets.Export.Button:Hide()
             addonDB.Widgets.Save.Button:Hide()
+            addonDB.Widgets.Share.Button:Hide()
             addonDB.Widgets.Print.Button:Hide()
             addonDB.Widgets.AddPlayers.Button:Disable()
             addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
