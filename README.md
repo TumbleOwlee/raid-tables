@@ -13,13 +13,13 @@ It was initially created by me so that I don't have to have access to Excel or u
 ## Functionality
 
 The following functionalities are implemented:
-* Create a new raid setup (unlimited number of raid can be created)
+* Create a new raid setup (unlimited number of raids can be created)
 * Add players to a raid setup
 * Import and export a raid setup
 * Print full table in text mode to distribute it in text channels (e.g. Discord)
 * Provide interface to easily distribute raid loot
   - Start and stop of roll for an item
-  - Assign player based automatically (or manually)
+  - Assign loot to players automatically (or manually)
   - Show list of all assigned items with the winning player
 * Automatically share changes and loot assignments with [Raid Tables Viewer](https://github.com/TumbleOwlee/raid-tables-viewer) users
 
