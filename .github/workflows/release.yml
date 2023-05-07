@@ -16,12 +16,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: 'recursive'
-          
-      - name: Create/Update release tag
-        uses: EndBug/latest-tag@latest
-        if: github.ref == 'refs/heads/main'
-        with:
-          ref: ${{ github.ref_name }}
       
       - name: Collect all files
         run: |

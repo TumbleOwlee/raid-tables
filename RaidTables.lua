@@ -16,16 +16,6 @@ local addonDB = {
     },
     Configs = {},
     Options = {
-        TierItems = {
-            196488, 196598, 196603, 196593,
-            196587, 196597, 196602, 196592,
-            196586, 196596, 196601, 196591,
-            196589, 196599, 196604, 196594,
-            196590, 196600, 196605, 196595,
-        },
-        RareItems = {
-            195480, 194301, 195526, 195527,
-        },
         Scaling = 1.0,
     },
     Tracking = {
@@ -35,6 +25,35 @@ local addonDB = {
     Testing = true,
     Sharing = false,
     LastEncodedConfig = nil,
+}
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Tier Item Identifiers
+-----------------------------------------------------------------------------------------------------------------------
+local TierItems = {
+    -- Vault of the Incarnates
+    196488, 196598, 196603, 196593,
+    196587, 196597, 196602, 196592,
+    196586, 196596, 196601, 196591,
+    196589, 196599, 196604, 196594,
+    196590, 196600, 196605, 196595,
+    -- Aberrus, the Shadowed Crucible
+    202634, 202621, 202627, 202624,
+    202631, 202635, 202622, 202628,
+    202625, 202632, 202636, 202623,
+    202629, 202626, 202633, 202640,
+    202637, 202630, 202638, 202639,
+}
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Rare Item Identifiers
+-----------------------------------------------------------------------------------------------------------------------
+local RareItems = {
+    -- Vault of the Incarnates
+    195480, 194301, 195526, 195527,
+    -- Aberrus, the Shadowed Crucible
+    202612, 202569, 204201, 204202,
+    204211, 204465
 }
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -659,6 +678,7 @@ local function DisableTracking()
     addonDB.Tracking.Active = false
 
     addonDB.Widgets.Share.Frame:Hide()
+    addonDB.Widgets.ForceShare.Button:Hide()
     addonDB.Widgets.Share.Checkbox:SetChecked(false)
 end
 
@@ -674,6 +694,7 @@ local function EnableTracking(name, share)
     local setup = GetActiveSetup()
     if setup and setup.Name == name then
         addonDB.Widgets.Share.Frame:Show()
+        addonDB.Widgets.ForceShare.Button:Show()
     end
 
     ShareConfiguration(select(2, GetConfigByName(name)))
@@ -1902,7 +1923,6 @@ local function SetupNewEntry(cfg, show)
                         local c = color.LightGray
                         addonDB.Widgets.Export.Button:Hide()
                         addonDB.Widgets.Save.Button:Hide()
-                        addonDB.Widgets.Share.Button:Hide()
                         addonDB.Widgets.Print.Button:Hide()
                         addonDB.Widgets.AddPlayers.Button:Disable()
                         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -1943,8 +1963,10 @@ local function SetupNewEntry(cfg, show)
 
                         if addonDB.Tracking.Active and addonDB.Tracking.Name == ev.Tab.Text:GetText() then
                             addonDB.Widgets.Share.Frame:Show()
+                            addonDB.Widgets.ForceShare.Button:Show()
                         else 
                             addonDB.Widgets.Share.Frame:Hide()
+                            addonDB.Widgets.ForceShare.Button:Hide()
                         end
                     end
                 end
@@ -1976,8 +1998,10 @@ local function SetupNewEntry(cfg, show)
                     s.Content:Hide()
                 else
                     if addonDB.Tracking.Active and addonDB.Tracking.Name == s.Tab.Text:GetText() then
+                        addonDB.Widgets.ForceShare.Button:Show()
                         addonDB.Widgets.Share.Frame:Show()
                     else
+                        addonDB.Widgets.ForceShare.Button:Hide()
                         addonDB.Widgets.Share.Frame:Hide()
                     end
                     s.Content:Show()
@@ -1995,7 +2019,6 @@ local function SetupNewEntry(cfg, show)
         setup.Tab.Button.pushed = true
         addonDB.Widgets.Export.Button:Show()
         addonDB.Widgets.Save.Button:Show()
-        addonDB.Widgets.Share.Button:Show()
         addonDB.Widgets.Print.Button:Show()
         addonDB.Widgets.AddPlayers.Button:Enable()
         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -2004,8 +2027,10 @@ local function SetupNewEntry(cfg, show)
 
         if addonDB.Tracking.Active and addonDB.Tracking.Name == setup.Tab.Text:GetText() then
             addonDB.Widgets.Share.Frame:Show()
+            addonDB.Widgets.ForceShare.Button:Show()
         else
             addonDB.Widgets.Share.Frame:Hide()
+            addonDB.Widgets.ForceShare.Button:Hide()
         end
     else
         setup.Content:Hide()
@@ -2112,19 +2137,19 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Create Share Button
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Share = {}
-    addonDB.Widgets.Share.Button, addonDB.Widgets.Share.Text = CreateButton(addonDB.Widgets.Content, "Share", 102, 35, color.DarkGray, color.LightGray)
-    SetPoint(addonDB.Widgets.Share.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -234, 10)
-    addonDB.Widgets.Share.Button:SetScript("OnClick", function(self)
+    addonDB.Widgets.ForceShare = {}
+    addonDB.Widgets.ForceShare.Button, addonDB.Widgets.ForceShare.Text = CreateButton(addonDB.Widgets.Content, "Share", 102, 35, color.DarkGray, color.LightGray)
+    SetPoint(addonDB.Widgets.ForceShare.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -234, 10)
+    addonDB.Widgets.ForceShare.Button:SetScript("OnClick", function(self)
         local now = GetTime()
         local config = GetActiveConfig()
-        if config and (addonDB.Widgets.Share.LastClick == nil or (addonDB.Widgets.Share.LastClick + 30) < now) then
-            addonDB.Widgets.Share.LastClick = now
+        if config and (addonDB.Widgets.ForceShare.LastClick == nil or (addonDB.Widgets.ForceShare.LastClick + 30) < now) then
+            addonDB.Widgets.ForceShare.LastClick = now
             addonDB.LastEncodedConfig = nil
-            ShareConfiguration(config)
+            ForceShareConfiguration(config)
         end
     end)
-    AddHover(addonDB.Widgets.Share.Button)
+    AddHover(addonDB.Widgets.ForceShare.Button)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Create Save Button
@@ -2296,9 +2321,9 @@ local function SetupUserInterface()
     -- Options Dialog: Tier Identifier Inputfield
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.Dialogs.Options.TierIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.TierIdContainer, "InputBoxTemplate")
-    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.TierIdContainer) - 40)
+    SetWidth(addonDB.Widgets.Dialogs.Options.TierIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.TierIdContainer) - 102 - 10 - 40)
     SetHeight(addonDB.Widgets.Dialogs.Options.TierIdInputField, 30)
-    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.TierIdContainer, "TOP", 0, -20)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.TierIdContainer, "TOP", -112 / 2, -20)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetAutoFocus(false)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetMaxLetters(0)
     addonDB.Widgets.Dialogs.Options.TierIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
@@ -2326,6 +2351,18 @@ local function SetupUserInterface()
     end)
 
     -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Tier Identifier Reset
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.TierIdReset = {}
+    addonDB.Widgets.Dialogs.Options.TierIdReset.Button, addonDB.Widgets.Dialogs.Options.TierIdReset.Text = CreateButton(addonDB.Widgets.Dialogs.Options.TierIdContainer, "Reset", 102, 28, color.DarkGray, color.LightGray)
+    AddHover(addonDB.Widgets.Dialogs.Options.TierIdReset.Button, false)
+    SetPoint(addonDB.Widgets.Dialogs.Options.TierIdReset.Button, "LEFT", addonDB.Widgets.Dialogs.Options.TierIdInputField, "RIGHT", 10, 0)
+    addonDB.Widgets.Dialogs.Options.TierIdReset.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Options.TierIdInputField:SetText(ArrayToString(TierItems))
+        addonDB.Options.TierItems = MergeTables(addonDB.Options.TierItems, {})
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
     -- Options Dialog: Tier Identifier Label 
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.Dialogs.Options.TierIdLabel = CreateLabel("Tier Identifiers:", addonDB.Widgets.Dialogs.Options.TierIdContainer, nil, nil, color.Gold)
@@ -2350,9 +2387,9 @@ local function SetupUserInterface()
     -- Options Dialog: Rare Identifier Inputfield
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.Dialogs.Options.RareIdInputField = CreateFrame("EditBox", nil, addonDB.Widgets.Dialogs.Options.RareIdContainer, "InputBoxTemplate")
-    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.RareIdContainer) - 40)
+    SetWidth(addonDB.Widgets.Dialogs.Options.RareIdInputField, GetWidth(addonDB.Widgets.Dialogs.Options.RareIdContainer) - 102 - 10 - 40)
     SetHeight(addonDB.Widgets.Dialogs.Options.RareIdInputField, 30)
-    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.RareIdContainer, "TOP", 0, -20)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdInputField, "TOP", addonDB.Widgets.Dialogs.Options.RareIdContainer, "TOP", -112 / 2, -20)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetAutoFocus(false)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetMaxLetters(0)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetFont("Fonts\\FRIZQT__.TTF", Scaled(12), "OUTLINE")
@@ -2377,6 +2414,18 @@ local function SetupUserInterface()
     end)
     addonDB.Widgets.Dialogs.Options.RareIdInputField:SetScript("OnEscapePressed", function(self) 
         self:SetText(ArrayToString(addonDB.Options.RareItems))
+        addonDB.Options.RareItems = MergeTables(addonDB.Options.RareItems, {})
+    end)
+
+    -----------------------------------------------------------------------------------------------------------------------
+    -- Options Dialog: Rare Identifier Reset
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Dialogs.Options.RareIdReset = {}
+    addonDB.Widgets.Dialogs.Options.RareIdReset.Button, addonDB.Widgets.Dialogs.Options.RareIdReset.Text = CreateButton(addonDB.Widgets.Dialogs.Options.RareIdContainer, "Reset", 102, 28, color.DarkGray, color.LightGray)
+    AddHover(addonDB.Widgets.Dialogs.Options.RareIdReset.Button, false)
+    SetPoint(addonDB.Widgets.Dialogs.Options.RareIdReset.Button, "LEFT", addonDB.Widgets.Dialogs.Options.RareIdInputField, "RIGHT", 10, 0)
+    addonDB.Widgets.Dialogs.Options.RareIdReset.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Dialogs.Options.RareIdInputField:SetText(ArrayToString(RareItems))
     end)
 
     -----------------------------------------------------------------------------------------------------------------------
@@ -3172,7 +3221,6 @@ local function SetupUserInterface()
         -------------------------------------------------------------------------------------------------------------------
         addonDB.Widgets.Export.Button:Show()
         addonDB.Widgets.Save.Button:Show()
-        addonDB.Widgets.Share.Button:Show()
         addonDB.Widgets.Print.Button:Show()
         addonDB.Widgets.AddPlayers.Button:Enable()
         addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -4736,6 +4784,10 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         -- Get SavedVariables
         ---------------------------------------------------------------------------------------------------------------
         local savedVariable = RaidTablesDB or {}
+
+        addonDB.Options.TierItems = TierItems
+        addonDB.Options.RareItems = RareItems
+
         addonDB.Options = MergeTables(addonDB.Options or {}, savedVariable.Options or {})
         addonDB.Configs = MergeTables(addonDB.Configs or {}, savedVariable.Configs or {})
 
@@ -4757,7 +4809,6 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
             local c = color.LightGray
             addonDB.Widgets.Export.Button:Hide()
             addonDB.Widgets.Save.Button:Hide()
-            addonDB.Widgets.Share.Button:Hide()
             addonDB.Widgets.Print.Button:Hide()
             addonDB.Widgets.AddPlayers.Button:Disable()
             addonDB.Widgets.AddPlayers.Text:SetTextColor(c.r, c.g, c.b, c.a)
@@ -4813,8 +4864,10 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
                     s.Content:Show()
                     if addonDB.Tracking.Active and addonDB.Tracking.Name == s.Tab.Text:GetText() then
                         addonDB.Widgets.Share.Frame:Show()
+                        addonDB.Widgets.ForceShare.Button:Show()
                     else
                         addonDB.Widgets.Share.Frame:Hide()
+                        addonDB.Widgets.ForceShare.Button:Hide()
                     end
                 else
                     -- Hide all other Tabs
