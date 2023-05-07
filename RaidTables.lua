@@ -2116,8 +2116,10 @@ local function SetupUserInterface()
     addonDB.Widgets.Share.Button, addonDB.Widgets.Share.Text = CreateButton(addonDB.Widgets.Content, "Share", 102, 35, color.DarkGray, color.LightGray)
     SetPoint(addonDB.Widgets.Share.Button, "BOTTOMRIGHT", addonDB.Widgets.Content, "BOTTOMRIGHT", -234, 10)
     addonDB.Widgets.Share.Button:SetScript("OnClick", function(self)
+        local now = GetTime()
         local config = GetActiveConfig()
-        if config then
+        if config and (addonDB.Widgets.Share.LastClick == nil or (addonDB.Widgets.Share.LastClick + 30) < now) then
+            addonDB.Widgets.Share.LastClick = now
             addonDB.LastEncodedConfig = nil
             ShareConfiguration(config)
         end
