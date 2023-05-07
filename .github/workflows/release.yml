@@ -1,0 +1,49 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          
+      - name: Create/Update release tag
+        uses: EndBug/latest-tag@latest
+        if: github.ref == 'refs/heads/main'
+        with:
+          ref: ${{ github.ref_name }}
+      
+      - name: Collect all files
+        run: |
+          mkdir ./RaidTablesViewer
+          mkdir -p ./RaidTablesViewer/libs/LibDeflate
+          mkdir -p ./RaidTablesViewer/libs/LibSerialize
+          mkdir -p ./RaidTablesViewer/libs/LibStub
+          mkdir -p ./RaidTablesViewer/img
+          cp -r ./RaidTablesViewer.lua ./RaidTablesViewer.toc ./embeds.xml ./LICENSE ./README.md ./RaidTablesViewer
+          cp -r ./img/RaidTablesViewer.png ./RaidTablesViewer/img/
+          cp -r ./libs/LibDeflate/LibDeflate.lua ./libs/LibDeflate/LICENSE.txt ./RaidTablesViewer/libs/LibDeflate/
+          cp -r ./libs/LibSerialize/LibSerialize.lua ./libs/LibSerialize/LICENSE ./RaidTablesViewer/libs/LibSerialize/
+          cp -r ./libs/LibStub/LibStub.lua ./RaidTablesViewer/libs/LibStub/
+          zip -r RaidTablesViewer-${{ github.ref_name }}.zip ./RaidTablesViewer
+          tar -czvf RaidTablesViewer-${{ github.ref_name }}.tar.gz ./RaidTablesViewer
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: false
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            RaidTablesViewer-${{ github.ref_name }}.zip
+            RaidTablesViewer-${{ github.ref_name }}.tar.gz
