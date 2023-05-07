@@ -37,7 +37,10 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          draft: false
           prerelease: false
+          replacesArtifacts: true
+          omitDraftDuringUpdate: true
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           files: |
