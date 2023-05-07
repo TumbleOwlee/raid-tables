@@ -13,7 +13,6 @@ local addonDB = {
         FreeSetups = {},
         FreePlayers = {},
         Dialogs = {},
-        Minimap = {},
     },
     Configs = {},
     Options = {
@@ -28,10 +27,6 @@ local addonDB = {
             195480, 194301, 195526, 195527,
         },
         Scaling = 1.0,
-        Minimap = {
-            X = 10,
-            Y = 10,
-        },
     },
     Tracking = {
         Active = false,
@@ -156,6 +151,7 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 local LibDeflate = LibStub("LibDeflate")
 local LibSerialize = LibStub("LibSerialize")
+local LibDD = LibStub("LibUIDropDownMenu-4.0")
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Wrap CreateFrame for Debugging
@@ -1823,6 +1819,7 @@ local function SetupNewEntry(cfg, show)
                 -------------------------------------------------------------------------------------------------------
                 local item = {
                     text = "Stop Tracking", 
+                    notCheckable = true,
                     func = function() 
                         local c = color.DarkGray
                         local name = setup.Name
@@ -1840,6 +1837,7 @@ local function SetupNewEntry(cfg, show)
                 -------------------------------------------------------------------------------------------------------
                 local item = {
                     text = "Start Tracking", 
+                    notCheckable = true,
                     func = function() 
                         local name = setup.Name
 
@@ -1864,6 +1862,7 @@ local function SetupNewEntry(cfg, show)
             -----------------------------------------------------------------------------------------------------------
             local rename = {
                 text = "Rename...", 
+                notCheckable = true,
                 func = function() 
                     local name = setup.Name
                     addonDB.Widgets.Dialogs.Rename.InputField.currentName = name
@@ -1877,6 +1876,7 @@ local function SetupNewEntry(cfg, show)
             -----------------------------------------------------------------------------------------------------------
             local delete = {
                 text = "Delete",
+                notCheckable = true,
                 func = function()
                     local name = setup.Name
                     local key, setup = GetSetupByName(name)
@@ -2018,7 +2018,7 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Right Mouse Click Menu Frame
 -----------------------------------------------------------------------------------------------------------------------
-addonDB.Widgets.RightMouseClickTabMenu = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
+addonDB.Widgets.RightMouseClickTabMenu = LibDD:Create_UIDropDownMenu(nil, UIParent)
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Create Addon Window
@@ -2976,7 +2976,7 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Activate Raid Dialog: Raid Selection
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.ActivateRaid.Frame, "UIDropDownMenuTemplate")
+    addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection = LibDD:Create_UIDropDownMenu(nil, addonDB.Widgets.Dialogs.ActivateRaid.Frame)
     SetPoint(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER", addonDB.Widgets.Dialogs.ActivateRaid.Frame, "CENTER", 35, 5)
     addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection = function()
         DisableTracking()
@@ -2984,20 +2984,22 @@ local function SetupUserInterface()
         -------------------------------------------------------------------------------------------------------------------
         -- Setup Dropdown Menu
         -------------------------------------------------------------------------------------------------------------------
-        UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, function(self, level)
+        LibDD:UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, function(self, level)
             for i, setup in pairs(addonDB.Widgets.Setups) do
-                local info = UIDropDownMenu_CreateInfo()
+                local info = LibDD:UIDropDownMenu_CreateInfo()
                 info.text = setup.Name
                 info.value = setup.Name
+                info.notCheckable = true
                 info.func = function(self) 
                     addonDB.Widgets.Dialogs.ActivateRaid.TrackingName = setup.Name
-                    UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
+                    LibDD:UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
+                    LibDD:UIDropDownMenu_SetText(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, setup.Name)
                 end
-                UIDropDownMenu_AddButton(info, level)
+                LibDD:UIDropDownMenu_AddButton(info, level)
             end
         end)
-        UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(100))
-        UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(GetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Frame) - 192))
+        LibDD:UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(100))
+        LibDD:UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, Scaled(GetWidth(addonDB.Widgets.Dialogs.ActivateRaid.Frame) - 192))
 
         local i, setup = GetActiveSetup()
         if not setup then
@@ -3005,8 +3007,9 @@ local function SetupUserInterface()
         end
 
         addonDB.Widgets.Dialogs.ActivateRaid.TrackingName = setup.Name
-        UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
-        UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER")
+        LibDD:UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, i)
+        LibDD:UIDropDownMenu_SetText(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, setup.Name)
+        LibDD:UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.ActivateRaid.RaidSelection, "CENTER")
     end
 
     -----------------------------------------------------------------------------------------------------------------------
@@ -3349,34 +3352,30 @@ local function SetupUserInterface()
     -----------------------------------------------------------------------------------------------------------------------
     -- Add Players Dialog: Class Selection
     -----------------------------------------------------------------------------------------------------------------------
-    addonDB.Widgets.Dialogs.AddPlayers.ClassSelection = CreateFrame("Frame", nil, addonDB.Widgets.Dialogs.AddPlayers.InputField, "UIDropDownMenuTemplate")
+    addonDB.Widgets.Dialogs.AddPlayers.ClassSelection = LibDD:Create_UIDropDownMenu(nil, addonDB.Widgets.Dialogs.AddPlayers.InputField)
     SetPoint(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "LEFT", addonDB.Widgets.Dialogs.AddPlayers.InputField, "RIGHT", -5, -3)
     addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class = classColorOptions[1].value
-    UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, function(self, level)
+    LibDD:UIDropDownMenu_Initialize(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, function(self, level)
         for i, option in pairs(classColorOptions) do
-            local info = UIDropDownMenu_CreateInfo()
+            local c = classColor[option.value]
+            local info = LibDD:UIDropDownMenu_CreateInfo()
             info.text = option.text
             info.value = option.value
+            info.notCheckable = true
+            --info.colorCode = "|cFF" .. string.format("%02x", c.r) .. string.format("%02x", c.g) .. string.format("%02x", c.b)
             info.func = function(self) 
                 addonDB.Widgets.Dialogs.AddPlayers.ClassSelection.Class = option.value
-                UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, i)
+                LibDD:UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, i)
+                LibDD:UIDropDownMenu_SetText(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, option.text)
             end
-            UIDropDownMenu_AddButton(info, level)
+            LibDD:UIDropDownMenu_AddButton(info, level)
         end
     end)
-    UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(100))
-    UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(124))
-    UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, 1)
-    UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "LEFT")
-
-    -----------------------------------------------------------------------------------------------------------------------
-    -- Add Players Dialog: Add Button
-    -----------------------------------------------------------------------------------------------------------------------
-    --addonDB.Widgets.Dialogs.AddPlayers.Add = {}
-    --addonDB.Widgets.Dialogs.AddPlayers.Add.Button, addonDB.Widgets.Dialogs.AddPlayers.Add.Text = CreateButton(addonDB.Widgets.Dialogs.AddPlayers.Frame, "Add", 102, 28, color.DarkGray, color.LightGray)
-    --SetPoint(addonDB.Widgets.Dialogs.AddPlayers.Add.Button, "LEFT", addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "RIGHT", -5, 2)
-    --addonDB.Widgets.Dialogs.AddPlayers.Add.Button:SetScript("OnClick", addonDB.Widgets.Dialogs.AddPlayers.onAdd)
-    --AddHover(addonDB.Widgets.Dialogs.AddPlayers.Add.Button)
+    LibDD:UIDropDownMenu_SetWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(100))
+    LibDD:UIDropDownMenu_SetButtonWidth(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, Scaled(124))
+    LibDD:UIDropDownMenu_SetSelectedID(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, 1)
+    LibDD:UIDropDownMenu_SetText(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, classColorOptions[1].text)
+    LibDD:UIDropDownMenu_JustifyText(addonDB.Widgets.Dialogs.AddPlayers.ClassSelection, "LEFT")
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Add Players Dialog: Confirm Button
@@ -4721,11 +4720,6 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         addonDB.Configs = MergeTables(addonDB.Configs or {}, savedVariable.Configs or {})
 
         ---------------------------------------------------------------------------------------------------------------
-        -- Set Minimap Position
-        ---------------------------------------------------------------------------------------------------------------
-        addonDB.Widgets.Minimap.Button:SetPoint("CENTER", Minimap, "BOTTOMLEFT", addonDB.Options.Minimap.X, addonDB.Options.Minimap.Y)
-
-        ---------------------------------------------------------------------------------------------------------------
         -- Setup User Interface
         ---------------------------------------------------------------------------------------------------------------
         SetupUserInterface()
@@ -4898,78 +4892,34 @@ end
 SlashCmdList.RAID_TABLES_COMMAND = SlashCommandHandler
 
 -----------------------------------------------------------------------------------------------------------------------
--- Create Minimap Button
+-- Add addon to addon compartment frame
 -----------------------------------------------------------------------------------------------------------------------
-addonDB.Widgets.Minimap.Button = CreateFrame("Button", addonName, Minimap)
-SetPoint(addonDB.Widgets.Minimap.Button, "CENTER", Minimap, "BOTTOMLEFT", 10, -10)
-addonDB.Widgets.Minimap.Overlay = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "OVERLAY")
-addonDB.Widgets.Minimap.Overlay:SetSize(50, 50)
-addonDB.Widgets.Minimap.Overlay:SetTexture(136430) --"Interface\\Minimap\\MiniMap-TrackingBorder"
-addonDB.Widgets.Minimap.Overlay:SetPoint("TOPLEFT", addonDB.Widgets.Minimap.Button, "TOPLEFT", 0, 0)
-addonDB.Widgets.Minimap.Background = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "BACKGROUND")
-addonDB.Widgets.Minimap.Background:SetSize(24, 24)
-addonDB.Widgets.Minimap.Background:SetTexture(136467) --"Interface\\Minimap\\UI-Minimap-Background"
-addonDB.Widgets.Minimap.Background:SetPoint("CENTER", addonDB.Widgets.Minimap.Button, "CENTER", 0, 1)
-addonDB.Widgets.Minimap.Icon = addonDB.Widgets.Minimap.Button:CreateTexture(nil, "ARTWORK")
-addonDB.Widgets.Minimap.Icon:SetSize(18, 18)
-addonDB.Widgets.Minimap.Icon:SetTexture("Interface\\AddOns\\RaidTables\\img\\RaidTables.png")
-addonDB.Widgets.Minimap.Icon:SetPoint("CENTER", addonDB.Widgets.Minimap.Button, "CENTER", 0, 1)
-addonDB.Widgets.Minimap.Button:SetMovable(true)
-addonDB.Widgets.Minimap.Button:EnableMouse(true)
-addonDB.Widgets.Minimap.Button:RegisterForDrag("LeftButton")
-addonDB.Widgets.Minimap.Button:SetScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:SetText(addonName)
-    GameTooltip:AddLine("Click to show ".. addonName .. " frame", 1, 1, 1)
-    GameTooltip:Show()
-end)
-addonDB.Widgets.Minimap.Button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-addonDB.Widgets.Minimap.Button:SetScript("OnClick", function(self)
-    if addonDB.Widgets.Addon:IsShown() then
-        if IsDialogShown() then
-            return
+AddonCompartmentFrame:RegisterAddon({
+    text = addonName,
+    icon = "Interface\\AddOns\\RaidTables\\img\\RaidTables.png",
+    registerForAnyClick = true,
+    notCheckable = true,
+    func = function(btn, arg1, arg2, checked, mouseButton)
+        if mouseButton == "LeftButton" then
+            if addonDB.Widgets.Addon:IsShown() then
+                if IsDialogShown() then
+                    return
+                end
+                addonDB.Widgets.Addon:Hide()
+            else
+                addonDB.Widgets.Addon:Show()
+            end
+        elseif mouseButton == "MiddleButton" then
+        else
         end
-        addonDB.Widgets.Addon:Hide()
-    else
-        addonDB.Widgets.Addon:Show()
+    end,
+    funcOnEnter = function()
+        GameTooltip:SetOwner(AddonCompartmentFrame, "ANCHOR_TOPRIGHT")
+        GameTooltip:SetText(addonName)
+        GameTooltip:AddLine("Click to toggle ".. addonName .. " frame", 1, 1, 1)
+        GameTooltip:Show()
     end
-end)
-addonDB.Widgets.Minimap.Button:SetScript("OnDragStart", function(self)
-    self.moving = true
-    self:StartMoving()
-end)
-addonDB.Widgets.Minimap.Button:SetScript("OnDragStop", function(self)
-    self.moving = false
-    self:StopMovingOrSizing()
-    local x, y = GetCursorPosition()
-    local scale = Minimap:GetEffectiveScale()
-    local left = Minimap:GetLeft()
-    local bottom = Minimap:GetBottom()
-
-    x = x / scale
-    y = y / scale
-
-    addonDB.Options.Minimap.X = x - left
-    addonDB.Options.Minimap.Y = y - bottom
-end)
-addonDB.Widgets.Minimap.Button:SetScript("OnUpdate", function(self)
-    if self.moving then
-        local x, y = GetCursorPosition()
-        local scale = Minimap:GetEffectiveScale()
-        local left = Minimap:GetLeft()
-        local right = Minimap:GetRight()
-        local top = Minimap:GetTop()
-        local bottom = Minimap:GetBottom()
-
-        x = x / scale
-        y = y / scale
-
-        if x > left and x < right and y > bottom and y < top then
-            self:ClearAllPoints()
-            self:SetPoint("CENTER", Minimap, "BOTTOMLEFT", x - left, y - bottom)
-        end
-    end
-end)
+})
 
 -----------------------------------------------------------------------------------------------------------------------
 -- Hide Addon Frame Initially
