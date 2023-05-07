@@ -1953,7 +1953,7 @@ local function SetupNewEntry(cfg, show)
             -----------------------------------------------------------------------------------------------------------
             -- Setup Right Mouse Click Menu
             -----------------------------------------------------------------------------------------------------------
-            EasyMenu(rightMouseClickMenuItems, addonDB.Widgets.RightMouseClickTabMenu, "cursor", 0, 0, "MENU", 1)
+            LibDD:EasyMenu(rightMouseClickMenuItems, addonDB.Widgets.RightMouseClickTabMenu, "cursor", 0, 0, "MENU", 1)
         else
             -----------------------------------------------------------------------------------------------------------
             -- Activate Tab and Show Its Content
