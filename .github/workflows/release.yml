@@ -47,5 +47,5 @@ jobs:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           files: |
-            RaidTablesViewer-${{ github.ref_name }}.zip
-            RaidTablesViewer-${{ github.ref_name }}.tar.gz
+            RaidTables-${{ github.ref_name }}.zip
+            RaidTables-${{ github.ref_name }}.tar.gz
