@@ -4,3 +4,6 @@
 [submodule "libs/LibSerialize"]
 	path = libs/LibSerialize
 	url = https://github.com/rossnichols/LibSerialize.git
+[submodule "fonts/UnicodeFont"]
+	path = fonts/UnicodeFont
+	url = https://github.com/Daribon/UnicodeFont
