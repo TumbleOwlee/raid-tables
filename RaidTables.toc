@@ -1,5 +1,5 @@
 ## Interface: 100100
-## Version: 0.1.0
+## Version: 0.1.1
 ## IconTexture: Interface\AddOns\RaidTables\img\RaidTables.png
 ## Title: RaidTables
 ## Notes: Tool to create Raids, log and assign loot.
