@@ -18,6 +18,7 @@ local addonDB = {
     Options = {
         Scaling = 1.0,
     },
+    Notes = {},
     Tracking = {
         Active = false,
         Name = nil,
@@ -198,6 +199,8 @@ local color = {
     ["Gold"] = { ["r"] = 1, ["g"] = 0.8, ["b"] = 0, ["a"] = 1 },
     ["Green"] = { ["r"] = 0, ["g"] = 0.8, ["b"] = 0, ["a"] = 1 },
     ["Red"] = { ["r"] = 0.8, ["g"] = 0, ["b"] = 0, ["a"] = 1 },
+    ["Orange"] = { ["r"] = 1, ["g"] = 0.5, ["b"] = 0.35, ["a"] = 1 },
+    ["Violet"] = { ["r"] = 1, ["g"] = 0, ["b"] = 1, ["a"] = 1 },
 }
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -528,6 +531,32 @@ local function SplitString(inputstr, sep)
         table.insert(t, str)
     end
     return t
+end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- Colorize Text
+-----------------------------------------------------------------------------------------------------------------------
+local function GetInterpretedText(text)
+    local lines = SplitString(text, "\n")
+    local output = ""
+    local gold = color.Gold
+    local orange = color.Orange
+    local violet = color.Violet
+    for _, line in pairs(lines) do
+        if string.sub(line, 1, 3) == "###" then
+            output = output .. "|cFF" .. string.format("%02x", violet.r * 255) .. string.format("%02x", violet.g * 255) .. string.format("%02x", violet.b * 255) .. string.sub(line, 4) .. "|r\n"
+        elseif string.sub(line, 1, 2) == "##" then
+            output = output .. "|cFF" .. string.format("%02x", orange.r * 255) .. string.format("%02x", orange.g * 255) .. string.format("%02x", orange.b * 255) .. string.sub(line, 3) .. "|r\n"
+        elseif string.sub(line, 1, 1) == "#" then
+            if output ~= "" then
+                output = output .. "\n"
+            end
+            output = output .. "|cFF" .. string.format("%02x", gold.r * 255) .. string.format("%02x", gold.g * 255) .. string.format("%02x", gold.b * 255) .. string.sub(line, 2) .. "|r\n"
+        else
+            output = output .. line .. "\n"
+        end
+    end
+    return output
 end
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -2146,7 +2175,7 @@ local function SetupUserInterface()
         if config and (addonDB.Widgets.ForceShare.LastClick == nil or (addonDB.Widgets.ForceShare.LastClick + 30) < now) then
             addonDB.Widgets.ForceShare.LastClick = now
             addonDB.LastEncodedConfig = nil
-            ForceShareConfiguration(config)
+            ShareConfiguration(config)
         end
     end)
     AddHover(addonDB.Widgets.ForceShare.Button)
@@ -2581,6 +2610,7 @@ local function SetupUserInterface()
     addonDB.Widgets.Dialogs.Print.EditBox:SetFontObject("ChatFontNormal")
     SetWidth(addonDB.Widgets.Dialogs.Print.EditBox, GetWidth(addonDB.Widgets.Dialogs.Print.Scroll))
     addonDB.Widgets.Dialogs.Print.EditBox:SetAutoFocus(false)
+    addonDB.Widgets.Dialogs.Print.EditBox:SetTextInsets(8, 8, 8, 8)
     addonDB.Widgets.Dialogs.Print.EditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
     addonDB.Widgets.Dialogs.Print.Scroll:SetScrollChild(addonDB.Widgets.Dialogs.Print.EditBox)
@@ -4632,6 +4662,89 @@ local function SetupUserInterface()
     end)
 
     -----------------------------------------------------------------------------------------------------------------------
+    -- Create Notes Window 
+    -----------------------------------------------------------------------------------------------------------------------
+    addonDB.Widgets.Notes = {}
+    addonDB.Widgets.Notes.Frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    SetSize(addonDB.Widgets.Notes.Frame, 600, 600)
+    SetPoint(addonDB.Widgets.Notes.Frame, "CENTER", 0, 0)
+    addonDB.Widgets.Notes.Frame:SetMovable(true)
+    addonDB.Widgets.Notes.Frame:EnableMouse(true)
+    addonDB.Widgets.Notes.Frame:RegisterForDrag("LeftButton")
+    addonDB.Widgets.Notes.Frame:SetScript("OnDragStart", addonDB.Widgets.Notes.Frame.StartMoving)
+    addonDB.Widgets.Notes.Frame:SetScript("OnDragStop", addonDB.Widgets.Notes.Frame.StopMovingOrSizing)
+    addonDB.Widgets.Notes.Frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+    })
+    addonDB.Widgets.Notes.Frame:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Notes.Frame:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b, 1)
+    addonDB.Widgets.Notes.Frame:SetFrameStrata("DIALOG")
+    addonDB.Widgets.Notes.Frame:Hide()
+
+    addonDB.Widgets.Notes.Header = CreateHeading("NOTES", GetWidth(addonDB.Widgets.Notes.Frame) - 10, addonDB.Widgets.Notes.Frame, 5, -5, false)
+
+    addonDB.Widgets.Notes.Scroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Notes.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    SetPoint(addonDB.Widgets.Notes.Scroll, "TOPLEFT", 6, -20)
+    SetPoint(addonDB.Widgets.Notes.Scroll, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -27, 47)
+    addonDB.Widgets.Notes.Scroll:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = math.max(1, Scaled(2)),
+        insets = { left = 10, right = 10, top = 10, bottom = 10 }
+    })
+    addonDB.Widgets.Notes.Scroll:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Notes.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Notes.TextView = CreateFrame("Frame", nil, addonDB.Widgets.Notes.Frame)
+    SetWidth(addonDB.Widgets.Notes.TextView, GetWidth(addonDB.Widgets.Notes.Scroll))
+    SetHeight(addonDB.Widgets.Notes.TextView, GetHeight(addonDB.Widgets.Notes.Scroll))
+    addonDB.Widgets.Notes.Text = CreateLabel(addonDB.Notes["Default"] or "", addonDB.Widgets.Notes.TextView, 5, -5, color.White, "TOPLEFT", 14)
+    addonDB.Widgets.Notes.Text:SetJustifyH("LEFT")
+    addonDB.Widgets.Notes.Text:SetText(GetInterpretedText(addonDB.Notes["Default"] or ""))
+    SetPoint(addonDB.Widgets.Notes.Text, "TOPLEFT", addonDB.Widgets.Notes.TextView, "TOPLEFT", 10, -10)
+    addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.TextView)
+
+    addonDB.Widgets.Notes.EditBox = CreateFrame("EditBox", nil, addonDB.Widgets.Notes.Scroll)
+    addonDB.Widgets.Notes.EditBox:SetMultiLine(true)
+    addonDB.Widgets.Notes.EditBox:SetFontObject("ChatFontNormal")
+    SetWidth(addonDB.Widgets.Notes.EditBox, GetWidth(addonDB.Widgets.Notes.Scroll))
+    SetHeight(addonDB.Widgets.Notes.EditBox, GetHeight(addonDB.Widgets.Notes.Scroll))
+    addonDB.Widgets.Notes.EditBox:SetAutoFocus(false)
+    addonDB.Widgets.Notes.EditBox:SetTextInsets(8, 8, 8, 8)
+    addonDB.Widgets.Notes.EditBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    addonDB.Widgets.Notes.EditBox:SetText(addonDB.Notes["Default"] or "")
+
+    addonDB.Widgets.Notes.Save = {}
+    addonDB.Widgets.Notes.Save.Button, addonDB.Widgets.Notes.Save.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Save", 102, 35, color.DarkGray, color.LightGray)
+    AddHover(addonDB.Widgets.Notes.Save.Button, false)
+    addonDB.Widgets.Notes.Save.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Notes.EditBox:Hide()
+        addonDB.Widgets.Notes.Save.Button:Hide()
+        addonDB.Widgets.Notes.TextView:Show()
+        addonDB.Widgets.Notes.Edit.Button:Show()
+        addonDB.Notes["Default"] = addonDB.Widgets.Notes.EditBox:GetText()
+        addonDB.Widgets.Notes.Text:SetText(GetInterpretedText(addonDB.Notes["Default"]))
+        addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.TextView)
+    end)
+    SetPoint(addonDB.Widgets.Notes.Save.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -9, 9)
+    addonDB.Widgets.Notes.Save.Button:Hide()
+
+    addonDB.Widgets.Notes.Edit = {}
+    addonDB.Widgets.Notes.Edit.Button, addonDB.Widgets.Notes.Edit.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Edit", 102, 35, color.DarkGray, color.LightGray)
+    AddHover(addonDB.Widgets.Notes.Edit.Button, false)
+    addonDB.Widgets.Notes.Edit.Button:SetScript("OnClick", function(self)
+        addonDB.Widgets.Notes.EditBox:Show()
+        addonDB.Widgets.Notes.Save.Button:Show()
+        addonDB.Widgets.Notes.TextView:Hide()
+        addonDB.Widgets.Notes.Edit.Button:Hide()
+        addonDB.Widgets.Notes.EditBox:SetText(addonDB.Notes["Default"] or "")
+        addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.EditBox)
+    end)
+    SetPoint(addonDB.Widgets.Notes.Edit.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -9, 9)
+
+    -----------------------------------------------------------------------------------------------------------------------
     -- Setup New Raid Button
     -----------------------------------------------------------------------------------------------------------------------
     addonDB.Widgets.NewRaid = {}
@@ -4790,6 +4903,7 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
 
         addonDB.Options = MergeTables(addonDB.Options or {}, savedVariable.Options or {})
         addonDB.Configs = MergeTables(addonDB.Configs or {}, savedVariable.Configs or {})
+        addonDB.Notes = MergeTables(addonDB.Notes or {}, savedVariable.Notes or {})
 
         ---------------------------------------------------------------------------------------------------------------
         -- Setup User Interface
@@ -4837,6 +4951,7 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         RaidTablesDB = {}
         RaidTablesDB.Configs = addonDB.Configs
         RaidTablesDB.Options = addonDB.Options
+        RaidTablesDB.Notes = addonDB.Notes
 
     elseif event == "RAID_INSTANCE_WELCOME" then
         if not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
@@ -4915,6 +5030,8 @@ local function SlashCommandHandler(msg)
                 end
             end
         end
+    elseif msg == "notes" then
+        ToggleFrame(addonDB.Widgets.Notes.Frame)
     elseif msg == "stats" then
         print("Created Frames = "..createdFrameCount)
         print("Raid Configs = "..#addonDB.Configs)
@@ -4984,6 +5101,7 @@ AddonCompartmentFrame:RegisterAddon({
                 addonDB.Widgets.Addon:Show()
             end
         elseif mouseButton == "MiddleButton" then
+            ToggleFrame(addonDB.Widgets.Notes.Frame)
         else
         end
     end,
