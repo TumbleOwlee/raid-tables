@@ -542,18 +542,28 @@ local function GetInterpretedText(text)
     local gold = color.Gold
     local orange = color.Orange
     local violet = color.Violet
+    local indent = 0
     for _, line in pairs(lines) do
-        if string.sub(line, 1, 3) == "###" then
-            output = output .. "|cFF" .. string.format("%02x", violet.r * 255) .. string.format("%02x", violet.g * 255) .. string.format("%02x", violet.b * 255) .. string.sub(line, 4) .. "|r\n"
-        elseif string.sub(line, 1, 2) == "##" then
-            output = output .. "|cFF" .. string.format("%02x", orange.r * 255) .. string.format("%02x", orange.g * 255) .. string.format("%02x", orange.b * 255) .. string.sub(line, 3) .. "|r\n"
-        elseif string.sub(line, 1, 1) == "#" then
+        if string.sub(line, 1, 4) == "### " then
+            if output ~= "" then
+                output = output .. "\n"
+            end
+            output = output .. Ws(8) .. "|cFF" .. string.format("%02x", violet.r * 255) .. string.format("%02x", violet.g * 255) .. string.format("%02x", violet.b * 255) .. string.sub(line, 5) .. "|r\n"
+            indent = 3
+        elseif string.sub(line, 1, 3) == "## " then
+            if output ~= "" then
+                output = output .. "\n"
+            end
+            output = output .. Ws(4) .. "|cFF" .. string.format("%02x", orange.r * 255) .. string.format("%02x", orange.g * 255) .. string.format("%02x", orange.b * 255) .. string.sub(line, 4) .. "|r\n"
+            indent = 2
+        elseif string.sub(line, 1, 2) == "# " then
             if output ~= "" then
                 output = output .. "\n"
             end
             output = output .. "|cFF" .. string.format("%02x", gold.r * 255) .. string.format("%02x", gold.g * 255) .. string.format("%02x", gold.b * 255) .. string.sub(line, 2) .. "|r\n"
+            indent = 1
         else
-            output = output .. line .. "\n"
+            output = output .. Ws(indent * 4) ..line .. "\n"
         end
     end
     return output
@@ -4670,9 +4680,18 @@ local function SetupUserInterface()
     SetPoint(addonDB.Widgets.Notes.Frame, "CENTER", 0, 0)
     addonDB.Widgets.Notes.Frame:SetMovable(true)
     addonDB.Widgets.Notes.Frame:EnableMouse(true)
-    addonDB.Widgets.Notes.Frame:RegisterForDrag("LeftButton")
-    addonDB.Widgets.Notes.Frame:SetScript("OnDragStart", addonDB.Widgets.Notes.Frame.StartMoving)
-    addonDB.Widgets.Notes.Frame:SetScript("OnDragStop", addonDB.Widgets.Notes.Frame.StopMovingOrSizing)
+    addonDB.Widgets.Notes.Frame:SetResizable(true)
+    addonDB.Widgets.Notes.Frame:RegisterForDrag("LeftButton", "RightButton")
+    addonDB.Widgets.Notes.Frame:SetScript("OnDragStart", function(self, button)
+        if button == "LeftButton" then
+            self:StartMoving()
+        else
+            self:StartSizing()
+        end
+    end)
+    addonDB.Widgets.Notes.Frame:SetScript("OnDragStop", function(self, button)
+        self:StopMovingOrSizing()
+    end)
     addonDB.Widgets.Notes.Frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -4683,27 +4702,33 @@ local function SetupUserInterface()
     addonDB.Widgets.Notes.Frame:SetFrameStrata("DIALOG")
     addonDB.Widgets.Notes.Frame:Hide()
 
-    addonDB.Widgets.Notes.Header = CreateHeading("NOTES", GetWidth(addonDB.Widgets.Notes.Frame) - 10, addonDB.Widgets.Notes.Frame, 5, -5, false)
+    addonDB.Widgets.Notes.Header = CreateHeading("NOTES", GetWidth(addonDB.Widgets.Notes.Frame) - 10, addonDB.Widgets.Notes.Frame, 5, -5, true)
+    addonDB.Widgets.Notes.Header:ClearAllPoints()
+    addonDB.Widgets.Notes.Header:SetPoint("TOP", addonDB.Widgets.Notes.Frame, "TOP", 0, -5)
 
-    addonDB.Widgets.Notes.Scroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Notes.Frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
-    SetPoint(addonDB.Widgets.Notes.Scroll, "TOPLEFT", 6, -20)
-    SetPoint(addonDB.Widgets.Notes.Scroll, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -27, 47)
-    addonDB.Widgets.Notes.Scroll:SetBackdrop({
+    addonDB.Widgets.Notes.ScrollContainer = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Notes.Frame, "BackdropTemplate")
+    SetPoint(addonDB.Widgets.Notes.ScrollContainer, "TOPLEFT", 6, -20)
+    SetPoint(addonDB.Widgets.Notes.ScrollContainer, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -6, 39)
+    addonDB.Widgets.Notes.ScrollContainer:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = math.max(1, Scaled(2)),
         insets = { left = 10, right = 10, top = 10, bottom = 10 }
     })
-    addonDB.Widgets.Notes.Scroll:SetBackdropColor(0, 0, 0, 1)
-    addonDB.Widgets.Notes.Scroll:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    addonDB.Widgets.Notes.ScrollContainer:SetBackdropColor(0, 0, 0, 1)
+    addonDB.Widgets.Notes.ScrollContainer:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+
+    addonDB.Widgets.Notes.Scroll = CreateFrame("ScrollFrame", nil, addonDB.Widgets.Notes.ScrollContainer, "UIPanelScrollFrameTemplate")
+    SetPoint(addonDB.Widgets.Notes.Scroll, "TOPLEFT", 10, -10)
+    SetPoint(addonDB.Widgets.Notes.Scroll, "BOTTOMRIGHT", addonDB.Widgets.Notes.ScrollContainer, "BOTTOMRIGHT", -27, 10)
 
     addonDB.Widgets.Notes.TextView = CreateFrame("Frame", nil, addonDB.Widgets.Notes.Frame)
     SetWidth(addonDB.Widgets.Notes.TextView, GetWidth(addonDB.Widgets.Notes.Scroll))
     SetHeight(addonDB.Widgets.Notes.TextView, GetHeight(addonDB.Widgets.Notes.Scroll))
-    addonDB.Widgets.Notes.Text = CreateLabel(addonDB.Notes["Default"] or "", addonDB.Widgets.Notes.TextView, 5, -5, color.White, "TOPLEFT", 14)
+    addonDB.Widgets.Notes.Text = CreateLabel(addonDB.Notes["Default"] or "", addonDB.Widgets.Notes.TextView, 5, -5, color.White, "TOPLEFT", 12)
     addonDB.Widgets.Notes.Text:SetJustifyH("LEFT")
     addonDB.Widgets.Notes.Text:SetText(GetInterpretedText(addonDB.Notes["Default"] or ""))
-    SetPoint(addonDB.Widgets.Notes.Text, "TOPLEFT", addonDB.Widgets.Notes.TextView, "TOPLEFT", 10, -10)
+    SetPoint(addonDB.Widgets.Notes.Text, "TOPLEFT", addonDB.Widgets.Notes.TextView, "TOPLEFT", 0, 0)
     addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.TextView)
 
     addonDB.Widgets.Notes.EditBox = CreateFrame("EditBox", nil, addonDB.Widgets.Notes.Scroll)
@@ -4717,7 +4742,7 @@ local function SetupUserInterface()
     addonDB.Widgets.Notes.EditBox:SetText(addonDB.Notes["Default"] or "")
 
     addonDB.Widgets.Notes.Save = {}
-    addonDB.Widgets.Notes.Save.Button, addonDB.Widgets.Notes.Save.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Save", 102, 35, color.DarkGray, color.LightGray)
+    addonDB.Widgets.Notes.Save.Button, addonDB.Widgets.Notes.Save.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Save", 102, 28, color.DarkGray, color.LightGray)
     AddHover(addonDB.Widgets.Notes.Save.Button, false)
     addonDB.Widgets.Notes.Save.Button:SetScript("OnClick", function(self)
         addonDB.Widgets.Notes.EditBox:Hide()
@@ -4728,11 +4753,11 @@ local function SetupUserInterface()
         addonDB.Widgets.Notes.Text:SetText(GetInterpretedText(addonDB.Notes["Default"]))
         addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.TextView)
     end)
-    SetPoint(addonDB.Widgets.Notes.Save.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -9, 9)
+    SetPoint(addonDB.Widgets.Notes.Save.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -12 - 102, 6)
     addonDB.Widgets.Notes.Save.Button:Hide()
 
     addonDB.Widgets.Notes.Edit = {}
-    addonDB.Widgets.Notes.Edit.Button, addonDB.Widgets.Notes.Edit.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Edit", 102, 35, color.DarkGray, color.LightGray)
+    addonDB.Widgets.Notes.Edit.Button, addonDB.Widgets.Notes.Edit.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Edit", 102, 28, color.DarkGray, color.LightGray)
     AddHover(addonDB.Widgets.Notes.Edit.Button, false)
     addonDB.Widgets.Notes.Edit.Button:SetScript("OnClick", function(self)
         addonDB.Widgets.Notes.EditBox:Show()
@@ -4742,7 +4767,15 @@ local function SetupUserInterface()
         addonDB.Widgets.Notes.EditBox:SetText(addonDB.Notes["Default"] or "")
         addonDB.Widgets.Notes.Scroll:SetScrollChild(addonDB.Widgets.Notes.EditBox)
     end)
-    SetPoint(addonDB.Widgets.Notes.Edit.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -9, 9)
+    SetPoint(addonDB.Widgets.Notes.Edit.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -12 - 102, 6)
+
+    addonDB.Widgets.Notes.Close = {}
+    addonDB.Widgets.Notes.Close.Button, addonDB.Widgets.Notes.Close.Text = CreateButton(addonDB.Widgets.Notes.Frame, "Close", 102, 28, color.DarkGray, color.LightGray)
+    AddHover(addonDB.Widgets.Notes.Close.Button, false)
+    addonDB.Widgets.Notes.Close.Button:SetScript("OnClick", function(self)
+        ToggleFrame(addonDB.Widgets.Notes.Frame)
+    end)
+    SetPoint(addonDB.Widgets.Notes.Close.Button, "BOTTOMRIGHT", addonDB.Widgets.Notes.Frame, "BOTTOMRIGHT", -6, 6)
 
     -----------------------------------------------------------------------------------------------------------------------
     -- Setup New Raid Button
