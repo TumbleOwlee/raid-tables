@@ -1066,7 +1066,7 @@ local function HandleLootAssignment()
         -- Show Summary Frame
         ---------------------------------------------------------------------------------------------------------------
         ShowFrame(addonDB.Widgets.Summary.Frame)
-
+        addonDB.Testing = false
         ShareLootSummary(addonDB.Widgets.Dialogs.Roll.AssignmentList)
     end
 end
