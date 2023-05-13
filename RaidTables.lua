@@ -23,7 +23,7 @@ local addonDB = {
         Active = false,
         Name = nil,
     },
-    Testing = true,
+    Testing = false,
     Sharing = false,
     LastEncodedConfig = nil,
 }
@@ -3913,13 +3913,13 @@ local function SetupUserInterface()
         if self.rollActive then
             self.rollActive = false
             local msg = "---- FINISHED ROLL OF " .. itemLink .. " ----"
-            SendChatMessage(msg, (addonDB.Testing and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
+            SendChatMessage(msg, (not addonDB.Testing and IsInRaid() and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
             addonDB.Widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.LightGray.r, color.LightGray.g, color.LightGray.b)
             addonDB.Widgets.Dialogs.Roll.Roll.Text:SetText("START ROLL")
         else
             self.rollActive = true
             local msg = "----    START ROLL OF " .. itemLink .. " ----"
-            SendChatMessage(msg, (addonDB.Testing and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
+            SendChatMessage(msg, (not addonDB.Testing and IsInRaid() and "RAID") or "WHISPER", nil, (addonDB.Testing and UnitName("player")) or nil)
             addonDB.Widgets.Dialogs.Roll.Roll.Button:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
             addonDB.Widgets.Dialogs.Roll.Roll.Text:SetText("STOP ROLL")
         end
@@ -5338,12 +5338,10 @@ local function SlashCommandHandler(msg)
     elseif msg == "roll test" then
         addonDB.Testing = true
 
-        local item = "|cffa335ee|Hitem:196590::::::::60:577::6:4:7188:6652:1485:6646:1:28:752:::|h[Dreadful Topaz Forgestone]|h|r"
-        table.insert(addonDB.Widgets.Dialogs.Roll.Items, { link = item, count = 2 })
-        item = "|cffa335ee|Hitem:19019::::::::120:265::5::::|h[Thunderfury, Blessed Blade of the Windseeker]|h|r"
-        table.insert(addonDB.Widgets.Dialogs.Roll.Items, { link = item, count = 1 })
-        item = "|cffa335ee|Hitem:188032::::::::60:269::4:4:7183:6652:1472:6646:1:28:1707:::|h[Thunderous Echo Vambraces]|h|r"
-        table.insert(addonDB.Widgets.Dialogs.Roll.Items, { link = item, count = 3 })
+        local item1 = "|cffa335ee|Hitem:200399::::::::70:262::35:7:6652:8828:8974:7977:1492:8767:7936::::::|h[Faceguard of Infused Earth]|h|r"
+        table.insert(addonDB.Widgets.Dialogs.Roll.Items, { link = item1, count = 2 })
+        local item2 = "|cff0070dd|Hitem:63470::::::::53:257::2:1:4198:2:28:1199:9:35:::::|h[Missing Diplomat's Pauldrons]|h|r"
+        table.insert(addonDB.Widgets.Dialogs.Roll.Items, { link = item2, count = 2 })
 
         for _, s in pairs(addonDB.Widgets.Setups) do
             if addonDB.Tracking.Name == nil and s.Tab.Button.pushed then
