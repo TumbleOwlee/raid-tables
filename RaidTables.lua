@@ -1102,25 +1102,32 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
         local cfg = config
         local stp = setup
 
-        if IsDialogShown() or mouseButton ~= "RightButton" then
-            return
-        end
-
-        local playerRightMouseClickMenu = {}
-        local rename = {
-            text = "Rename...", 
-            notCheckable = true,
-            func = function() 
-                ShowFrame(addonDB.Widgets.Dialogs.RenamePlayer.Frame)
-                addonDB.Widgets.Dialogs.RenamePlayer.InputField:SetText(player.NameText:GetText())
-                addonDB.Widgets.Dialogs.RenamePlayer.InputField:SetTextColor(colour.r, colour.g, colour.b, colour.a)
-                addonDB.Widgets.Dialogs.RenamePlayer.InputField.currentName = player.NameText:GetText()
-                addonDB.Widgets.Dialogs.RenamePlayer.InputField.setup = stp
-                addonDB.Widgets.Dialogs.RenamePlayer.InputField.config = cfg
+        if IsDialogShown() then
+            if addonDB.Widgets.Dialogs.Roll.Frame:IsShown() then
+                addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(player.NameText:GetText())
+                addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                addonDB.Widgets.Dialogs.Roll.Class = playerInfo.Class
             end
-        }
-        table.insert(playerRightMouseClickMenu, rename);
-        LibDD:EasyMenu(playerRightMouseClickMenu, player.RightMouseClickMenu, "cursor", 0, 0, "MENU", 1)
+        else
+            if mouseButton == "RightButton" then
+                local playerRightMouseClickMenu = {}
+                local rename = {
+                    text = "Rename...",
+                    notCheckable = true,
+                    func = function()
+                        ShowFrame(addonDB.Widgets.Dialogs.RenamePlayer.Frame)
+                        addonDB.Widgets.Dialogs.RenamePlayer.InputField:SetText(player.NameText:GetText())
+                        addonDB.Widgets.Dialogs.RenamePlayer.InputField:SetTextColor(colour.r, colour.g, colour.b, colour.a)
+                        addonDB.Widgets.Dialogs.RenamePlayer.InputField.currentName = player.NameText:GetText()
+                        addonDB.Widgets.Dialogs.RenamePlayer.InputField.setup = stp
+                        addonDB.Widgets.Dialogs.RenamePlayer.InputField.config = cfg
+                    end
+                }
+                table.insert(playerRightMouseClickMenu, rename);
+                LibDD:EasyMenu(playerRightMouseClickMenu, player.RightMouseClickMenu, "cursor", 0, 0, "MENU", 1)
+            end
+        end
     end)
 
 
@@ -5239,11 +5246,13 @@ addonDB.Widgets.Addon:SetScript("OnEvent", function(self, event, arg1, ...)
         RaidTablesDB.Notes = addonDB.Notes
 
     elseif event == "RAID_INSTANCE_WELCOME" then
-        if not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
-            addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
-            addonDB.Widgets.Dialogs.ActivateRaid.Frame:Show()
-        elseif addonDB.Tracking.Active then
-            ShareConfiguration(select(2, GetConfigByName(addonDB.Tracking.Name)))
+        if IsInRaid() then
+            if not addonDB.Tracking.Active and not addonDB.Widgets.Dialogs.ActivateRaid.Frame:IsShown() then
+                addonDB.Widgets.Dialogs.ActivateRaid.SetupSelection()
+                addonDB.Widgets.Dialogs.ActivateRaid.Frame:Show()
+            elseif addonDB.Tracking.Active then
+                ShareConfiguration(select(2, GetConfigByName(addonDB.Tracking.Name)))
+            end
         end
 
     elseif event == "START_LOOT_ROLL" and arg1 then
