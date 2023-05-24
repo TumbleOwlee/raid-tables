@@ -2338,14 +2338,14 @@ local function SetupUserInterface()
 
         local config = GetActiveConfig()
         local content =  ""
-        content = content .. "+------------------------------------------+-------+-------+--------+\n" 
+        content = content .. "+----------------------------+-------+-------+--------+\n"
         content = content .. "| Character Name                           | Rares | Tiers | Normal |\n"
         for _, playerInfo in pairs(config.PlayerInfos) do
             local _, count = string.gsub(playerInfo.Name, '[^\128-\193]', '')
-            content = content .. "+------------------------------------------+-------+-------+--------+\n"
+            content = content .. "+----------------------------+-------+-------+--------+\n"
             content = content .. "| " .. playerInfo.Name .. Ws(26 - count) .. " | " .. string.format("%5d", playerInfo.Rare)  .. " | " .. string.format("%5d", playerInfo.Tier) .. " | " .. string.format("%6d", playerInfo.Normal) .. " |\n"
         end
-        content = content .. "+------------------------------------------+-------+-------+--------+\n"
+        content = content .. "+----------------------------+-------+-------+--------+\n"
 
         addonDB.Widgets.Dialogs.Print.EditBox:SetText(content)
         ShowFrame(addonDB.Widgets.Dialogs.Print.Frame)
