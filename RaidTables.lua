@@ -1104,10 +1104,46 @@ local function CreatePlayerFrame(player, config, setup, parent, playerInfo, widt
 
         if IsDialogShown() then
             if addonDB.Widgets.Dialogs.Roll.Frame:IsShown() then
-                addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(player.NameText:GetText())
-                addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
-                addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
-                addonDB.Widgets.Dialogs.Roll.Class = playerInfo.Class
+                if mouseButton == "RightButton" then
+                    local playerRightMouseClickMenu = {}
+                    local mainSpecRoll = {
+                        text = "Main Spec Roll (100)",
+                        notCheckable = true,
+                        func = function()
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(player.NameText:GetText())
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                            addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                            addonDB.Widgets.Dialogs.Roll.Class = playerInfo.Class
+                            addonDB.Widgets.Dialogs.Roll.RollType = "MainSpecRoll"
+                        end
+                    }
+                    table.insert(playerRightMouseClickMenu, mainSpecRoll);
+                    local secondSpecRoll = {
+                        text = "Second Spec Roll (50)",
+                        notCheckable = true,
+                        func = function()
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(player.NameText:GetText())
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                            addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                            addonDB.Widgets.Dialogs.Roll.Class = playerInfo.Class
+                            addonDB.Widgets.Dialogs.Roll.RollType = "SecondSpecRoll"
+                        end
+                    }
+                    table.insert(playerRightMouseClickMenu, secondSpecRoll);
+                    local transmogRoll = {
+                        text = "Transmog Roll (25)",
+                        notCheckable = true,
+                        func = function()
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetText(player.NameText:GetText())
+                            addonDB.Widgets.Dialogs.Roll.AssignmentText:SetTextColor(colour.r, colour.g, colour.b)
+                            addonDB.Widgets.Dialogs.Roll.Assignment:SetBackdropBorderColor(color.Gold.r, color.Gold.g, color.Gold.b)
+                            addonDB.Widgets.Dialogs.Roll.Class = playerInfo.Class
+                            addonDB.Widgets.Dialogs.Roll.RollType = "TransmogRoll"
+                        end
+                    }
+                    table.insert(playerRightMouseClickMenu, transmogRoll);
+                    LibDD:EasyMenu(playerRightMouseClickMenu, player.RightMouseClickMenu, "cursor", 0, 0, "MENU", 1)
+                end
             end
         else
             if mouseButton == "RightButton" then
