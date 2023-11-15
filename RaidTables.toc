@@ -1,4 +1,4 @@
-## Interface: 100100
+## Interface: 100200
 ## Version: 0.1.1
 ## IconTexture: Interface\AddOns\RaidTables\img\RaidTables.png
 ## Title: RaidTables
